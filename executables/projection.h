@@ -9,5 +9,6 @@ typedef CGAL::Exact_predicates_exact_constructions_kernel K;
 typedef CGAL::Constrained_Delaunay_triangulation_2<K> DT; 
 typedef DT::Point Point;
 
+Point project_point_onto_line(const Point& P, const Point& A, const Point& B);
 
 int projection(std::vector<Point> points, DT dt);

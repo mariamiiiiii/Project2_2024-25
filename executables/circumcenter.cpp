@@ -101,7 +101,7 @@ std::vector<Point> add_steiner_in_circumcenter(DT& dt, std::vector<Point> steine
             Point p3 = face->vertex(2)->point();
             Point circumcenter_point = circumcenter(p1, p2, p3);
 
-            // Έλεγχος αν το Steiner σημείο βρίσκεται εντός του κυρτού περιβλήματος
+            // Check if Steiner point is inside convex hull
             if (is_within_convex_hull(circumcenter_point, convex_hull)) {
                 steiner_points.push_back(circumcenter_point);
                 added_steiner = true;
@@ -149,9 +149,11 @@ int circumcenter_steiner_points(std::vector<Point> points, DT dt) {
         }
     }
 
-    while (obtuse_exists && iterations <= 5) {
+    while (obtuse_exists && iterations <= 1) {
         
         steiner_points = add_steiner_in_circumcenter(dt, steiner_points, convex_hull);
+
+        CGAL::draw(dt);
         
         obtuse_exists = false;
         obtuse_count = 0;

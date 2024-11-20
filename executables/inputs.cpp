@@ -57,11 +57,34 @@ InputData inputs() {
         region_boundary.push_back(boundary_index.second.get_value<int>());
     }
 
+    std::string method = pt.get<std::string>("method");
+
+    // Specify known integer parameters
+    std::set<std::string> int_parameters = {"kappa", "L"};
+
+    // Populate the parameters map with either integer or double based on the known types
+    std::map<std::string, double> parameters;
+    for (const auto& item : pt.get_child("parameters")) {
+        if (int_parameters.find(item.first) != int_parameters.end()) {
+            // For known integer parameters, retrieve as an int and cast to double
+            parameters[item.first] = static_cast<double>(item.second.get_value<int>());
+        } else {
+            // For other parameters, retrieve as a double
+            parameters[item.first] = item.second.get_value<double>();
+        }
+    }
+
+    bool delaunay = pt.get<bool>("delaunay");
+
+
     // Create inputData struct and populate it
     InputData input_data;
     input_data.points = points;
     input_data.region_boundary = region_boundary;
     input_data.additional_constraints = additional_constraints;
+    input_data.method = method;
+    input_data.parameters = parameters;
+    input_data.delaunay = delaunay;
 
     return input_data; 
 }

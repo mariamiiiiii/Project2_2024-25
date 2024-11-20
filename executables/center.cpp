@@ -34,18 +34,6 @@ int obtuse_vertex_index(const FaceHandle& face) {
     return -1;
 }
 
-// Function to check if a triangle is obtuse and return the index and angle of the obtuse vertex
-template <typename FaceHandle>
-std::pair<int, double> obtuse_vertex_index_and_angle(const FaceHandle& face) {
-    double angle1 = angle_between(face->vertex(0)->point(), face->vertex(1)->point(), face->vertex(2)->point());
-    double angle2 = angle_between(face->vertex(1)->point(), face->vertex(2)->point(), face->vertex(0)->point());
-    double angle3 = angle_between(face->vertex(2)->point(), face->vertex(0)->point(), face->vertex(1)->point());
-    if (angle1 > 90.0 + 0.01) return std::make_pair(0, angle1);
-    if (angle2 > 90.0 + 0.01) return std::make_pair(1, angle2);
-    if (angle3 > 90.0 + 0.01) return std::make_pair(2, angle3);
-    return std::make_pair(-1, 0.0);
-}
-
 // Function to get the edges of the triangulation
 template <typename DT>
 std::vector<std::pair<typename DT::Point, typename DT::Point>> print_edges(const DT& dt) {
@@ -99,19 +87,16 @@ int center_steiner_points(std::vector<Point> points, DT dt) {
         dt.insert(p);
     }
     CGAL::draw(dt);
-    for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
-        int obtuse_vertex = obtuse_vertex_index(face);
-    }
     while (obtuse_exists && iterations <= 5) {
         steiner_points = add_steiner_if_obtuse_center(dt, steiner_points);
         obtuse_exists = false;
         for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
-            auto obtuse = obtuse_vertex_index_and_angle(face);
-            auto obtuse_vertex = std::get<0>(obtuse);
-            auto obtuse_angle = std::get<1>(obtuse);
+            int obtuse_vertex = obtuse_vertex_index(face);
             if (obtuse_vertex != -1) {
                 obtuse_exists = true;
+                break;
             }
+
         }
         iterations++;
     }

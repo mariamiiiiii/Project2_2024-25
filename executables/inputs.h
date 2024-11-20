@@ -11,6 +11,9 @@ struct InputData {
     std::vector<Point> points;
     std::vector<int> region_boundary;
     std::vector<std::vector<int>> additional_constraints;
+    std::string method;
+    std::map<std::string, double> parameters;
+    bool delaunay;
 };
 
 
