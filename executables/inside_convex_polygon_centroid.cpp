@@ -123,7 +123,8 @@ std::vector<std::pair<typename DT::Point, typename DT::Point>> print_edges(const
 
 // Function to add Steiner points at the center of convex polygons of obtuse triangles
 template <typename DT>
-std::vector<Point> add_steiner_in_convex_polygon_centroid(DT& dt, std::vector<Point> steiner_points) {
+std::pair<std::vector<Point>, std::vector<Point>> add_steiner_in_convex_polygon_centroid(DT& dt, std::vector<Point> steiner_points, std::vector<Point> points) {
+
     bool added_steiner = false;
     int count = 0;
 
@@ -135,6 +136,7 @@ std::vector<Point> add_steiner_in_convex_polygon_centroid(DT& dt, std::vector<Po
             if (!polygon_points.empty()) {  // Only proceed if convex polygon found
                 Point centroid = compute_centroid(polygon_points);
                 steiner_points.push_back(centroid);
+                points.push_back(centroid);
                 added_steiner = true;
             }
         }
@@ -144,11 +146,12 @@ std::vector<Point> add_steiner_in_convex_polygon_centroid(DT& dt, std::vector<Po
         dt.insert(p);
     }
 
-    return steiner_points;
+    return {steiner_points, points};
 }
 
 int inside_convex_polygon_centroid_steiner_points(std::vector<Point> points, DT dt) {
     std::vector<Point> steiner_points;
+    std::pair<std::vector<Point>, std::vector<Point>> all_points;
     std::vector<std::pair<typename DT::Point, typename DT::Point>> edges;
 
     bool obtuse_exists = true;
@@ -164,7 +167,9 @@ int inside_convex_polygon_centroid_steiner_points(std::vector<Point> points, DT 
 
     while (obtuse_exists && iterations <= 5) {
         
-        steiner_points = add_steiner_in_convex_polygon_centroid(dt, steiner_points);
+        all_points = add_steiner_in_convex_polygon_centroid(dt, steiner_points, points);
+        steiner_points = all_points.first;  // Extract Steiner points
+        points = all_points.second;        // Extract updated points
         
         obtuse_exists = false;
         obtuse_count = 0;  
