@@ -80,7 +80,7 @@ Point project_point_onto_line(const Point& P, const Point& A, const Point& B) {
 
 // Function to add Steiner points based on the orthogonal projection of the obtuse vertex onto the opposite side
 template <typename DT>
-std::vector<Point>  add_steiner_if_obtuse(DT& dt, std::vector<Point> steiner_points) {
+std::pair<std::vector<Point>, std::vector<Point>> add_steiner_if_obtuse(DT& dt, std::vector<Point> steiner_points, std::vector<Point> points) {
     bool added_steiner = false;
 
     for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
@@ -96,6 +96,7 @@ std::vector<Point>  add_steiner_if_obtuse(DT& dt, std::vector<Point> steiner_poi
 
             // Add the Steiner point to the list
             steiner_points.push_back(projection);
+            points.push_back(projection);
             added_steiner = true;
         }
     }
@@ -105,11 +106,7 @@ std::vector<Point>  add_steiner_if_obtuse(DT& dt, std::vector<Point> steiner_poi
         dt.insert(p);
     }
 
-    if (added_steiner) {
-        return steiner_points;
-    } else {
-        return {};
-    }
+    return {steiner_points, points};
 }
 
 int projection(std::vector<Point> points, DT dt) {
@@ -118,6 +115,7 @@ int projection(std::vector<Point> points, DT dt) {
     int iterations = 0;
 
     std::vector<Point> steiner_points;
+    std::pair<std::vector<Point>, std::vector<Point>> all_points;
 
     std::vector<std::pair<typename DT::Point, typename DT::Point>> edges;
 
@@ -132,7 +130,9 @@ int projection(std::vector<Point> points, DT dt) {
         int obtuse_vertex = obtuse_vertex_index(face);
     }
     while (obtuse_exists && iterations <= 5) {
-        steiner_points = add_steiner_if_obtuse(dt, steiner_points);
+        all_points = add_steiner_if_obtuse(dt, steiner_points, points);
+        steiner_points = all_points.first;  // Extract Steiner points
+        points = all_points.second;        // Extract updated points
         obtuse_exists = false;
         for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
             auto obtuse = obtuse_vertex_index_and_angle(face);

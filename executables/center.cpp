@@ -48,9 +48,9 @@ std::vector<std::pair<typename DT::Point, typename DT::Point>> print_edges(const
 
 // Function to add Steiner points instead of flipping edges when a triangle is obtuse
 template <typename DT>
-std::vector<Point> add_steiner_if_obtuse_center(DT& dt, std::vector<Point> steiner_points) {
+std::pair<std::vector<Point>, std::vector<Point>> add_steiner_if_obtuse_center(DT& dt, std::vector<Point> steiner_points, std::vector<Point> points) {
     bool added_steiner = false;
-    // std::vector<Point> steiner_points;
+
     for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
         int obtuse_vertex = obtuse_vertex_index(face);
         if (obtuse_vertex != -1) {
@@ -61,8 +61,9 @@ std::vector<Point> add_steiner_if_obtuse_center(DT& dt, std::vector<Point> stein
             K::FT mid_x = (p1.x() + p2.x()) / 2;
             K::FT mid_y = (p1.y() + p2.y()) / 2;
             Point midpoint(mid_x, mid_y);
-            // Add the Steiner point to the list
+            // Add the Steiner point to the lists
             steiner_points.push_back(midpoint);
+            points.push_back(midpoint);
             added_steiner = true;
         }
     }
@@ -70,15 +71,14 @@ std::vector<Point> add_steiner_if_obtuse_center(DT& dt, std::vector<Point> stein
     for (const Point& p : steiner_points) {
         dt.insert(p);
     }
-    if (added_steiner) {
-        return steiner_points;
-    } else {
-        return {};
-    }
+
+    // Return both steiner_points and points as a pair
+    return {steiner_points, points};
 }
 
 int center_steiner_points(std::vector<Point> points, DT dt) {
     std::vector<Point> steiner_points;
+    std::pair<std::vector<Point>, std::vector<Point>> all_points;
     bool obtuse_exists = true;
     int iterations = 0;
     std::vector<std::pair<typename DT::Point, typename DT::Point>> edges;
@@ -88,7 +88,10 @@ int center_steiner_points(std::vector<Point> points, DT dt) {
     }
     CGAL::draw(dt);
     while (obtuse_exists && iterations <= 5) {
-        steiner_points = add_steiner_if_obtuse_center(dt, steiner_points);
+        all_points = add_steiner_if_obtuse_center(dt, steiner_points, points);
+        steiner_points = all_points.first;  // Extract Steiner points
+        points = all_points.second;        // Extract updated points
+
         obtuse_exists = false;
         for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
             int obtuse_vertex = obtuse_vertex_index(face);
