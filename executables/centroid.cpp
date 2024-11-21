@@ -69,7 +69,7 @@ std::pair<int, double> obtuse_vertex_index_and_angle(const FaceHandle& face) {
 
 // Function to add Steiner points at the circumcenters of obtuse triangles inside a convex polygon
 template <typename DT>
-std::vector<Point> add_steiner_in_centroid(DT& dt, std::vector<Point> steiner_points) {
+std::pair<std::vector<Point>, std::vector<Point>> add_steiner_in_centroid(DT& dt, std::vector<Point> steiner_points, std::vector<Point> points) {
     bool added_steiner = false;
     for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
         int obtuse_vertex = obtuse_vertex_index(face);
@@ -83,6 +83,7 @@ std::vector<Point> add_steiner_in_centroid(DT& dt, std::vector<Point> steiner_po
 
             // Add the Steiner point (centroid) to the list
             steiner_points.push_back(centroid_point);
+            points.push_back(centroid_point);
             added_steiner = true;
         }
     }
@@ -90,15 +91,13 @@ std::vector<Point> add_steiner_in_centroid(DT& dt, std::vector<Point> steiner_po
     for (const Point& p : steiner_points) {
         dt.insert(p);
     }
-    if (added_steiner) {
-        return steiner_points;
-    } else {
-        return {};
-    }
+
+    return {steiner_points, points};
 }
 
 int centroid_steiner_points(std::vector<Point> points, DT dt) {
     std::vector<Point> steiner_points;
+    std::pair<std::vector<Point>, std::vector<Point>> all_points;
     bool obtuse_exists = true;
     int iterations = 0;
     std::vector<std::pair<typename DT::Point, typename DT::Point>> edges;
@@ -111,7 +110,9 @@ int centroid_steiner_points(std::vector<Point> points, DT dt) {
         int obtuse_vertex = obtuse_vertex_index(face);
     }
     while (obtuse_exists && iterations <= 5) {
-        steiner_points = add_steiner_in_centroid(dt, steiner_points);
+        all_points = add_steiner_in_centroid(dt, steiner_points, points);
+        steiner_points = all_points.first;  // Extract Steiner points
+        points = all_points.second;        // Extract updated points
         obtuse_exists = false;
         for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
             auto obtuse = obtuse_vertex_index_and_angle(face);
