@@ -1,5 +1,5 @@
 {
-    "instance_uid": "test_5",
+    "instance_uid": "test_6",
     "num_points": 12,
     "points_x": [
         10,
@@ -43,30 +43,9 @@
         6,
         2
     ],
-    "num_constraints": 5,
-    "additional_constraints": [
-        [
-            1,
-            2
-        ],
-        [
-            3,
-            6
-        ],
-        [
-            4,
-            7
-        ],
-        [
-            5,
-            8
-        ],
-        [
-            9,
-            10
-        ]
-    ],
-    "method": "sa", 
-    "parameters": {"alpha": 2.0, "beta": 5.0, "L": 5000 }, 
+    "num_constraints": 0,
+    "additional_constraints": [],
+    "method": "local", 
+    "parameters": {"L": 500 }, 
     "delaunay": true
 }

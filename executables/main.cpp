@@ -12,6 +12,7 @@
 #include "center.h"
 #include "circumcenter.h"
 #include "inside_convex_polygon_centroid.h"
+#include "local_search.h"
 
 // Define CGAL types
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
@@ -112,6 +113,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    //local_search(points, cdt, L);
+
     // // Prompt user to choose the Steiner point insertion method
     // cout << "Please choose a method for Steiner points from the following options:\n";
     // cout << "1: Center of longest edge\n";
@@ -137,7 +140,7 @@ int main(int argc, char* argv[]) {
     //         circumcenter_steiner_points(points, cdt);
     //         break;
     //     case 4:
-    //         inside_convex_polygon_centroid_steiner_points(points, cdt);
+             inside_convex_polygon_centroid_steiner_points(points, cdt);
     //         break;
     //     case 5:
     //         centroid_steiner_points(points, cdt);

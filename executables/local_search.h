@@ -7,10 +7,11 @@
 #include <cmath>
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
-typedef CGAL::Constrained_Delaunay_triangulation_2<K> CDT;
-typedef CDT::Point Point;
+typedef CGAL::Constrained_Delaunay_triangulation_2<K> DT;
+typedef DT::Point Point;
 
 // Function to perform local search
-std::vector<Point> local_search(CDT& cdt, int max_iterations);
+std::pair<std::vector<Point>, std::vector<Point>> add_best_steiner(DT& dt, std::vector<Point> steiner_points, std::vector<Point> points);
+int local_search(std::vector<Point> points, DT dt, int max_iterations);
 
 #endif // LOCAL_SEARCH_H
