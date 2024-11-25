@@ -1,7 +1,18 @@
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include <CGAL/Delaunay_triangulation_2.h>
+#include <CGAL/draw_triangulation_2.h>
+#include <cmath>
+#include "output.h"
 #include "local_search.h"
 #include "projection.h" // Assuming projection method is defined here
 #include "circumcenter.h" // Assuming circumcenter method is defined here
 #include "centroid.h" // Assuming centroid method is defined here
+
+typedef CGAL::Exact_predicates_exact_constructions_kernel K;
+typedef CGAL::Constrained_Delaunay_triangulation_2<K> DT;
+typedef DT::Point Point;
+typedef DT::Edge Edge;
+typedef DT::Face_handle FaceHandle;
 
 // Function to calculate the angle between two points and a common vertex
 template <typename P>
@@ -28,10 +39,25 @@ int obtuse_vertex_index(const FaceHandle& face) {
     return -1;
 }
 
+// Function to print the edges of the triangulation
+template <typename DT>
+std::vector<std::pair<typename DT::Point, typename DT::Point>> print_edges(const DT& dt) {
+    // Define a vector to hold pairs of points representing edges
+    std::vector<std::pair<typename DT::Point, typename DT::Point>> edges;
+    for (auto edge = dt.finite_edges_begin(); edge != dt.finite_edges_end(); ++edge) {
+        auto v1 = edge->first->vertex((edge->second + 1) % 3)->point();
+        auto v2 = edge->first->vertex((edge->second + 2) % 3)->point();
+        // Add the edge to the vector
+        edges.emplace_back(v1, v2);
+    }
+    // Return the vector of edges
+    return edges;
+}
+
 // Helper function to evaluate obtuse angle count
-int count_obtuse_triangles(const CDT& cdt) {
+int count_obtuse_triangles(const DT& dt) {
     int count = 0;
-    for (auto face = cdt.finite_faces_begin(); face != cdt.finite_faces_end(); ++face) {
+    for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
         int obtuse_vertex = obtuse_vertex_index(face);
         if (obtuse_vertex != -1) {
             ++count;
@@ -41,16 +67,11 @@ int count_obtuse_triangles(const CDT& cdt) {
 }
 
 // Local search function
-std::vector<Point> local_search(CDT& cdt, int max_iterations) {
-    std::vector<Point> all_steiner_points;
-    bool improved = true;
-    int iteration = 0;
-
-    while (improved && iteration < max_iterations) {
-        improved = false;
+std::pair<std::vector<Point>, std::vector<Point>> add_best_steiner(DT& dt, std::vector<Point> steiner_points, std::vector<Point> points) {
+    bool added_steiner = false;
 
         // Store obtuse triangles
-        for (auto face = cdt.finite_faces_begin(); face != cdt.finite_faces_end(); ++face) {
+        for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
             int obtuse_vertex = obtuse_vertex_index(face);
             if (obtuse_vertex != -1) {
                 // Get the vertices of the obtuse triangle
@@ -64,17 +85,17 @@ std::vector<Point> local_search(CDT& cdt, int max_iterations) {
                 Point centroid_point = calculate_centroid(p_obtuse, p1, p2);
 
                 // Evaluate obtuse triangle reduction for each method
-                CDT temp_cdt = cdt;
-                temp_cdt.insert(projection_point);
-                int count_projection = count_obtuse_triangles(temp_cdt);
+                DT temp_dt = dt;
+                temp_dt.insert(projection_point);
+                int count_projection = count_obtuse_triangles(temp_dt);
 
-                temp_cdt = cdt;
-                temp_cdt.insert(circumcenter_point);
-                int count_circumcenter = count_obtuse_triangles(temp_cdt);
+                temp_dt = dt;
+                temp_dt.insert(circumcenter_point);
+                int count_circumcenter = count_obtuse_triangles(temp_dt);
 
-                temp_cdt = cdt;
-                temp_cdt.insert(centroid_point);
-                int count_centroid = count_obtuse_triangles(temp_cdt);
+                temp_dt = dt;
+                temp_dt.insert(centroid_point);
+                int count_centroid = count_obtuse_triangles(temp_dt);
 
                 // Select the best point
                 Point best_point;
@@ -87,15 +108,55 @@ std::vector<Point> local_search(CDT& cdt, int max_iterations) {
                     best_point = centroid_point;
                 }
 
-                // Add the best point to the CDT
-                cdt.insert(best_point);
-                all_steiner_points.push_back(best_point);
-                improved = true;
+                // Add the best point to the DT
+                points.push_back(best_point);
+                steiner_points.push_back(best_point);
+                added_steiner = true;
             }
         }
 
-        ++iteration;
+    for (const Point& p : steiner_points) {
+        dt.insert(p);
     }
 
-    return all_steiner_points;
+    return {steiner_points, points};
+}
+
+int local_search(std::vector<Point> points, DT dt, int max_iterations) {
+    bool obtuse_exists = true;
+    int obtuse_count = 0;
+    int iterations = 0;
+
+    std::vector<Point> steiner_points;
+    std::pair<std::vector<Point>, std::vector<Point>> all_points;
+
+    std::vector<std::pair<typename DT::Point, typename DT::Point>> edges;
+
+    // Insert points into the triangulation
+    for (const Point& p : points) {
+        dt.insert(p);
+    }
+
+    CGAL::draw(dt);
+
+    
+    while (obtuse_exists && iterations <= max_iterations) {
+        all_points = add_best_steiner(dt, steiner_points, points);
+        steiner_points = all_points.first;  // Extract Steiner points
+        points = all_points.second;        // Extract updated points
+        obtuse_exists = false;
+        for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
+            auto obtuse_vertex = obtuse_vertex_index(face);
+            if (obtuse_vertex != -1) {
+                obtuse_exists = true;
+            }
+        }
+        iterations++;
+    }
+
+    edges = print_edges(dt);
+    output(edges, steiner_points);
+    CGAL::draw(dt);
+
+    return 0;
 }
