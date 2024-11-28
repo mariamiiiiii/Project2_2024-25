@@ -2,7 +2,7 @@
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/draw_triangulation_2.h>
 #include <cmath>
-#include "output.h"
+// #include "output.h"
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
 typedef CGAL::Constrained_Delaunay_triangulation_2<K> DT; 
@@ -34,20 +34,20 @@ bool is_obtuse_triangle(const FaceHandle& face) {
 }
 
 // Function to print the edges of the triangulation
-template <typename DT>
-std::vector<std::pair<typename DT::Point, typename DT::Point>> print_edges(const DT& dt) {
-    // Define a vector to hold pairs of points representing edges
-    std::vector<std::pair<typename DT::Point, typename DT::Point>> edges;
+// template <typename DT>
+// std::vector<std::pair<typename DT::Point, typename DT::Point>> print_edges(const DT& dt) {
+//     // Define a vector to hold pairs of points representing edges
+//     std::vector<std::pair<typename DT::Point, typename DT::Point>> edges;
 
-    for (auto edge = dt.finite_edges_begin(); edge != dt.finite_edges_end(); ++edge) {
-        auto v1 = edge->first->vertex((edge->second + 1) % 3)->point();
-        auto v2 = edge->first->vertex((edge->second + 2) % 3)->point();
-        // Add the edge to the vector
-        edges.emplace_back(v1, v2);
-    }
-    // Return the vector of edges
-    return edges;
-}
+//     for (auto edge = dt.finite_edges_begin(); edge != dt.finite_edges_end(); ++edge) {
+//         auto v1 = edge->first->vertex((edge->second + 1) % 3)->point();
+//         auto v2 = edge->first->vertex((edge->second + 2) % 3)->point();
+//         // Add the edge to the vector
+//         edges.emplace_back(v1, v2);
+//     }
+//     // Return the vector of edges
+//     return edges;
+// }
 
 // Function to flip the diagonal if there are obtuse triangles
 template <typename DT>
@@ -79,8 +79,8 @@ int flip_edges(std::vector<Point> points, DT dt) {
     flip_if_obtuse(dt);
 
 
-    edges = print_edges(dt);
-    output(edges, {});
+    // edges = print_edges(dt);
+    // output(edges, {});
 
     CGAL::draw(dt);
 

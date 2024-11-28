@@ -75,17 +75,35 @@ Point circumcenter(const Point& p1, const Point& p2, const Point& p3) {
 
 // Function to print the edges of the triangulation
 template <typename DT>
-std::vector<std::pair<typename DT::Point, typename DT::Point>> print_edges(const DT& dt) {
-    // Define a vector to hold pairs of points representing edges
-    std::vector<std::pair<typename DT::Point, typename DT::Point>> edges;
+std::vector<std::pair<size_t, size_t>> print_edges(const DT& dt, std::vector<Point> points) {
+    std::vector<std::pair<size_t, size_t>> edges; // Corrected the type
+
+    // Create a map from Point to its index in the points vector
+    std::map<typename DT::Point, size_t> point_index_map;
+    for (size_t i = 0; i < points.size(); ++i) {
+        point_index_map[points[i]] = i;
+    }
+
+    // Print edges and their indices
     for (auto edge = dt.finite_edges_begin(); edge != dt.finite_edges_end(); ++edge) {
         auto v1 = edge->first->vertex((edge->second + 1) % 3)->point();
         auto v2 = edge->first->vertex((edge->second + 2) % 3)->point();
-        // Add the edge to the vector
-        edges.emplace_back(v1, v2);
+        size_t idx1 = point_index_map[v1];
+        size_t idx2 = point_index_map[v2];
+
+        // Store only indices
+        edges.emplace_back(idx1, idx2);
+
+        std::cout << "Edge between indices " << idx1 << " and " << idx2 << std::endl;
     }
 
-    // Return the vector of edges
+    // Print point indices for all vertices in the triangulation
+    for (auto vertex = dt.finite_vertices_begin(); vertex != dt.finite_vertices_end(); ++vertex) {
+        auto pt = vertex->point();
+        size_t idx = point_index_map[pt];
+        std::cout << "Point: " << pt << ", Index: " << idx << std::endl;
+    }
+
     return edges;
 }
 
@@ -123,7 +141,7 @@ int circumcenter_steiner_points(std::vector<Point> points, DT dt) {
 
     std::vector<Point> convex_hull;
     CGAL::convex_hull_2(points.begin(), points.end(), std::back_inserter(convex_hull));
-    std::vector<std::pair<typename DT::Point, typename DT::Point>> edges;
+    std::vector<std::pair<size_t, size_t>> edges;
 
     bool obtuse_exists = true;
     int obtuse_count = 0;
@@ -175,7 +193,7 @@ int circumcenter_steiner_points(std::vector<Point> points, DT dt) {
         iterations++;
     }
 
-    edges = print_edges(dt);
+    edges = print_edges(dt, all_points.first);
 
     output(edges, steiner_points);
     CGAL::draw(dt);
