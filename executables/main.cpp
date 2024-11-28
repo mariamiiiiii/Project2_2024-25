@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
     std::string method = input.method;
 
     // Get parameters
-    std::map<std::string, double> parameters;
+    std::map<std::string, double> parameters = input.parameters;
 
     double alpha, beta, xi, psi, lambda, kappa, L; 
 
@@ -96,10 +96,13 @@ int main(int argc, char* argv[]) {
 
     if (method == "local") {
         L = parameters["L"];
+        local_search(points, cdt, L);
     } else if (method == "sa") {
         alpha = parameters["alpha"];
         beta = parameters["beta"];
         L = parameters["L"];
+        //simulated_annealing(points, cdt, alpha, beta, L);
+        cout << alpha << " and " << beta << endl;
     } else if (method == "ant") {
         alpha = parameters["alpha"];
         beta = parameters["beta"];
@@ -140,7 +143,7 @@ int main(int argc, char* argv[]) {
     //         circumcenter_steiner_points(points, cdt);
     //         break;
     //     case 4:
-             inside_convex_polygon_centroid_steiner_points(points, cdt);
+    //         inside_convex_polygon_centroid_steiner_points(points, cdt);
     //         break;
     //     case 5:
     //         centroid_steiner_points(points, cdt);

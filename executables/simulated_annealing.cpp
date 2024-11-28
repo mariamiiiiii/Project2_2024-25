@@ -4,7 +4,7 @@
 #include <cmath>
 #include "output.h"
 #include "utils.h"
-#include "local_search.h"
+#include "simulated_annealing.h"
 #include "projection.h" // Assuming projection method is defined here
 #include "circumcenter.h" // Assuming circumcenter method is defined here
 #include "centroid.h" // Assuming centroid method is defined here
@@ -15,8 +15,20 @@ typedef DT::Point Point;
 typedef DT::Edge Edge;
 typedef DT::Face_handle FaceHandle;
 
+double calculateEnergy(DT& dt, double alpha, double beta) {
+    int obtuse_count = 0;
+    for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
+        int obtuse_vertex = obtuse_vertex_index(face);
+        if (obtuse_vertex != -1) {
+            ++obtuse_count;
+        }
+    }
+
+    return 0.0;//alpha * obtuse_count + beta * steiner_points_count;
+}
+
 // Local search function
-std::pair<std::vector<Point>, std::vector<Point>> add_best_steiner(DT& dt, std::vector<Point> steiner_points, std::vector<Point> points) {
+std::pair<std::vector<Point>, std::vector<Point>> add_best_steiner_sa(DT& dt, std::vector<Point> steiner_points, std::vector<Point> points) {
     bool added_steiner = false;
 
         // Store obtuse triangles
@@ -71,7 +83,7 @@ std::pair<std::vector<Point>, std::vector<Point>> add_best_steiner(DT& dt, std::
     return {steiner_points, points};
 }
 
-int local_search(std::vector<Point> points, DT dt, int max_iterations) {
+int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double beta, int max_iterations) {
     bool obtuse_exists = true;
     int obtuse_count = 0;
     int iterations = 0;
@@ -88,9 +100,8 @@ int local_search(std::vector<Point> points, DT dt, int max_iterations) {
 
     CGAL::draw(dt);
 
-    
     while (obtuse_exists && iterations <= max_iterations) {
-        all_points = add_best_steiner(dt, steiner_points, points);
+        all_points = add_best_steiner_sa(dt, steiner_points, points);
         steiner_points = all_points.first;  // Extract Steiner points
         points = all_points.second;        // Extract updated points
         obtuse_exists = false;
