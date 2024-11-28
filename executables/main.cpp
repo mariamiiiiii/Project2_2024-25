@@ -134,7 +134,7 @@ int main(int argc, char* argv[]) {
     // // Execute the chosen method based on user input
     // switch (choice) {
     //     case 1:
-    //         center_steiner_points(points, cdt);
+            center_steiner_points(points, cdt);
     //         break;
     //     case 2:
     //         projection(points, cdt);
