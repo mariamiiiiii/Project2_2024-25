@@ -12,6 +12,7 @@
 #include "center.h"
 #include "circumcenter.h"
 #include "inside_convex_polygon_centroid.h"
+#include "local_search.h"
 
 // Define CGAL types
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
@@ -38,7 +39,7 @@ int main(int argc, char* argv[]) {
     std::string method = input.method;
 
     // Get parameters
-    std::map<std::string, double> parameters;
+    std::map<std::string, double> parameters = input.parameters;
 
     double alpha, beta, xi, psi, lambda, kappa, L; 
 
@@ -95,10 +96,13 @@ int main(int argc, char* argv[]) {
 
     if (method == "local") {
         L = parameters["L"];
+        local_search(points, cdt, L);
     } else if (method == "sa") {
         alpha = parameters["alpha"];
         beta = parameters["beta"];
         L = parameters["L"];
+        //simulated_annealing(points, cdt, alpha, beta, L);
+        cout << alpha << " and " << beta << endl;
     } else if (method == "ant") {
         alpha = parameters["alpha"];
         beta = parameters["beta"];
@@ -112,18 +116,20 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // // Prompt user to choose the Steiner point insertion method
-    // cout << "Please choose a method for Steiner points from the following options:\n";
-    // cout << "1: Center of longest edge\n";
-    // cout << "2: Projection\n";
-    // cout << "3: Circumcenter\n";
-    // cout << "4: Centroid of internal convex polygon\n";
-    // cout << "5: Centroid\n";
-    // cout << "6: Flip\n";
-    // cout << "Enter the number corresponding to your choice: ";
+    //local_search(points, cdt, L);
 
-    // int choice;
-    // cin >> choice;
+    // Prompt user to choose the Steiner point insertion method
+    cout << "Please choose a method for Steiner points from the following options:\n";
+    cout << "1: Center of longest edge\n";
+    cout << "2: Projection\n";
+    cout << "3: Circumcenter\n";
+    cout << "4: Centroid of internal convex polygon\n";
+    cout << "5: Centroid\n";
+    cout << "6: Flip\n";
+    cout << "Enter the number corresponding to your choice: ";
+
+    int choice;
+    cin >> choice;
 
     // // Execute the chosen method based on user input
     // switch (choice) {

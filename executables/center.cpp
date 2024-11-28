@@ -36,13 +36,33 @@ int obtuse_vertex_index(const FaceHandle& face) {
 
 // Function to get the edges of the triangulation
 template <typename DT>
-std::vector<std::pair<typename DT::Point, typename DT::Point>> print_edges(const DT& dt) {
+std::vector<std::pair<typename DT::Point, typename DT::Point>> print_edges(const DT& dt, std::vector<Point> points) {
     std::vector<std::pair<typename DT::Point, typename DT::Point>> edges;
+    
+    // Create a map from Point to its index in the points vector
+    std::map<typename DT::Point, size_t> point_index_map;
+    for (size_t i = 0; i < points.size(); ++i) {
+        point_index_map[points[i]] = i;
+    }
+
+    // Print edges and their indices
     for (auto edge = dt.finite_edges_begin(); edge != dt.finite_edges_end(); ++edge) {
         auto v1 = edge->first->vertex((edge->second + 1) % 3)->point();
         auto v2 = edge->first->vertex((edge->second + 2) % 3)->point();
+        size_t idx1 = point_index_map[v1];
+        size_t idx2 = point_index_map[v2];
         edges.emplace_back(v1, v2);
+
+        std::cout << "Edge between points " << idx1 << " and " << idx2 << std::endl;
     }
+
+    // Print point indices for all vertices in the triangulation
+    for (auto vertex = dt.finite_vertices_begin(); vertex != dt.finite_vertices_end(); ++vertex) {
+        auto pt = vertex->point();
+        size_t idx = point_index_map[pt];
+        std::cout << "Point: " << pt << ", Index: " << idx << std::endl;
+    }
+
     return edges;
 }
 
@@ -103,7 +123,7 @@ int center_steiner_points(std::vector<Point> points, DT dt) {
         }
         iterations++;
     }
-    edges = print_edges(dt);
+    edges = print_edges(dt, all_points.first);
     output(edges, steiner_points);
     CGAL::draw(dt);
     return 0;

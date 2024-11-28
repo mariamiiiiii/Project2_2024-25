@@ -54,70 +54,198 @@ Point compute_centroid(const std::vector<Point>& points) {
     return Point(sum_x / points.size(), sum_y / points.size());
 }
 
-std::vector<Point> find_convex_polygon(DT& dt, FaceHandle start_face) {
-    std::set<Point> unique_points; // Use a set to avoid duplicate points
-    std::set<FaceHandle> visited_faces; // To keep track of visited faces
-    std::stack<FaceHandle> face_stack; // Stack for DFS
-    face_stack.push(start_face); // Start from the initial face
+std::vector<Point> find_convex_polygon(DT& dt, FaceHandle current_face) {
+    std::vector<Point> steiner_points;
+    std::vector<Point> polygon_points;
 
-    while (!face_stack.empty()) {
-        FaceHandle current_face = face_stack.top();
-        face_stack.pop();
-
-        // If this face has already been visited, skip it
-        if (visited_faces.find(current_face) != visited_faces.end()) {
-            continue;
+    // Helper lambda to check convexity and add a Steiner point
+    auto process_polygon = [&](const std::vector<Point>& points) -> bool {
+        Polygon_2 polygon(points.begin(), points.end());
+        if (!polygon.is_convex()) {
+            return false;
         }
+        Point centroid = compute_centroid(points);
+        steiner_points.push_back(centroid);
+        return true;
+    };
 
-        visited_faces.insert(current_face);
+    // Collect points of the current face
+    for (int i = 0; i < 3; ++i) {
+        if (!dt.is_infinite(current_face->vertex(i))) {
+            polygon_points.push_back(current_face->vertex(i)->point());
+        }
+    }
 
-        // Check if the current face is obtuse
-        if (obtuse_vertex_index(current_face) != -1) {
-            // Add the vertices of the obtuse triangle to the unique points set
+    // Check if the current face and all its neighbors form a convex polygon
+    std::vector<FaceHandle> neighbors;
+    for (int i = 0; i < 3; ++i) {
+        FaceHandle neighbor = current_face->neighbor(i);
+        if (!dt.is_infinite(neighbor)) {
+            neighbors.push_back(neighbor);
+        }
+    }
+
+    if (neighbors.size() == 3) {
+        for (const auto& neighbor : neighbors) {
             for (int i = 0; i < 3; ++i) {
-                Point pt = current_face->vertex(i)->point();
-                unique_points.insert(pt);
-            }
-
-            // Explore neighboring faces
-            for (int i = 0; i < 3; ++i) {
-                FaceHandle neighbor_face = current_face->neighbor(i);
-                if (!dt.is_infinite(neighbor_face) && visited_faces.find(neighbor_face) == visited_faces.end() && obtuse_vertex_index(neighbor_face) != -1) {
-                    face_stack.push(neighbor_face);
+                if (!dt.is_infinite(neighbor->vertex(i))) {
+                    Point p = neighbor->vertex(i)->point();
+                    if (std::find(polygon_points.begin(), polygon_points.end(), p) == polygon_points.end()) {
+                        polygon_points.push_back(p);
+                    }
                 }
             }
         }
+
+        if (process_polygon(polygon_points)) {
+            return steiner_points;
+        }
     }
 
-    // Create a Polygon_2 with the unique points
-    Polygon_2 polygon;
-    for (const auto& pt : unique_points) {
-        polygon.push_back(pt);
+    // Try current face with pairs of neighbors
+    for (size_t i = 0; i < neighbors.size(); ++i) {
+        for (size_t j = i + 1; j < neighbors.size(); ++j) {
+            polygon_points.clear();
+
+            // Add current face points
+            for (int k = 0; k < 3; ++k) {
+                if (!dt.is_infinite(current_face->vertex(k))) {
+                    polygon_points.push_back(current_face->vertex(k)->point());
+                }
+            }
+
+            // Add points from the two neighbors
+            for (const auto& neighbor : {neighbors[i], neighbors[j]}) {
+                for (int k = 0; k < 3; ++k) {
+                    if (!dt.is_infinite(neighbor->vertex(k))) {
+                        Point p = neighbor->vertex(k)->point();
+                        if (std::find(polygon_points.begin(), polygon_points.end(), p) == polygon_points.end()) {
+                            polygon_points.push_back(p);
+                        }
+                    }
+                }
+            }
+
+            if (process_polygon(polygon_points)) {
+                return steiner_points;
+            }
+        }
     }
 
-    // Check if the polygon is convex
-    if (polygon.is_convex()) {
-        return std::vector<Point>(polygon.vertices_begin(), polygon.vertices_end());
-    } else {
-        // If not convex, compute the convex hull
-        std::vector<Point> convex_hull;
-        CGAL::convex_hull_2(unique_points.begin(), unique_points.end(), std::back_inserter(convex_hull));
-        return convex_hull;
+    // Fallback: Current face with one neighbor
+    for (const auto& neighbor : neighbors) {
+        polygon_points.clear();
+
+        // Add current face points
+        for (int k = 0; k < 3; ++k) {
+            if (!dt.is_infinite(current_face->vertex(k))) {
+                polygon_points.push_back(current_face->vertex(k)->point());
+            }
+        }
+
+        // Add points from the neighbor
+        for (int k = 0; k < 3; ++k) {
+            if (!dt.is_infinite(neighbor->vertex(k))) {
+                Point p = neighbor->vertex(k)->point();
+                if (std::find(polygon_points.begin(), polygon_points.end(), p) == polygon_points.end()) {
+                    polygon_points.push_back(p);
+                }
+            }
+        }
+
+        if (process_polygon(polygon_points)) {
+            return steiner_points;
+        }
     }
+
+    return steiner_points;
 }
 
+
+// std::vector<Point> find_convex_polygon(DT& dt, FaceHandle start_face) {
+//     std::set<Point> unique_points; // Use a set to avoid duplicate points
+//     std::set<FaceHandle> visited_faces; // To keep track of visited faces
+//     std::stack<FaceHandle> face_stack; // Stack for DFS
+//     face_stack.push(start_face); // Start from the initial face
+
+//     while (!face_stack.empty()) {
+//         FaceHandle current_face = face_stack.top();
+//         face_stack.pop();
+
+//         // If this face has already been visited, skip it
+//         if (visited_faces.find(current_face) != visited_faces.end()) {
+//             continue;
+//         }
+
+//         visited_faces.insert(current_face);
+
+//         // Check if the current face is obtuse
+//         if (obtuse_vertex_index(current_face) != -1) {
+//             // Add the vertices of the obtuse triangle to the unique points set
+//             for (int i = 0; i < 3; ++i) {
+//                 if (!dt.is_infinite(current_face->vertex(i))) {
+//                     unique_points.insert(current_face->vertex(i)->point());
+//                 }
+//             }
+
+//             // Explore neighboring faces
+//             for (int i = 0; i < 3; ++i) {
+//                 FaceHandle neighbor_face = current_face->neighbor(i);
+//                 if (!dt.is_infinite(neighbor_face) && visited_faces.find(neighbor_face) == visited_faces.end() && obtuse_vertex_index(neighbor_face) != -1) {
+//                     face_stack.push(neighbor_face);
+//                 }
+//             }
+//         }
+//     }
+
+//     // Create a Polygon_2 with the unique points
+//     Polygon_2 polygon;
+//     for (const auto& pt : unique_points) {
+//         polygon.push_back(pt);
+//     }
+
+//     // Check if the polygon is convex
+//     if (polygon.is_convex()) {
+//         return std::vector<Point>(polygon.vertices_begin(), polygon.vertices_end());
+//     } else {
+//         // If not convex, compute the convex hull
+//         std::vector<Point> convex_hull;
+//         CGAL::convex_hull_2(unique_points.begin(), unique_points.end(), std::back_inserter(convex_hull));
+//         return convex_hull;
+//     }
+// }
+
+// Function to print the edges of the triangulation
 template <typename DT>
-std::vector<std::pair<typename DT::Point, typename DT::Point>> print_edges(const DT& dt) {
-    // Define a vector to hold pairs of points representing edges
-    std::vector<std::pair<typename DT::Point, typename DT::Point>> edges;
+std::vector<std::pair<size_t, size_t>> print_edges(const DT& dt, std::vector<Point> points) {
+    std::vector<std::pair<size_t, size_t>> edges; // Corrected the type
+
+    // Create a map from Point to its index in the points vector
+    std::map<typename DT::Point, size_t> point_index_map;
+    for (size_t i = 0; i < points.size(); ++i) {
+        point_index_map[points[i]] = i;
+    }
+
+    // Print edges and their indices
     for (auto edge = dt.finite_edges_begin(); edge != dt.finite_edges_end(); ++edge) {
         auto v1 = edge->first->vertex((edge->second + 1) % 3)->point();
         auto v2 = edge->first->vertex((edge->second + 2) % 3)->point();
-        // Add the edge to the vector
-        edges.emplace_back(v1, v2);
+        size_t idx1 = point_index_map[v1];
+        size_t idx2 = point_index_map[v2];
+
+        // Store only indices
+        edges.emplace_back(idx1, idx2);
+
+        std::cout << "Edge between indices " << idx1 << " and " << idx2 << std::endl;
     }
 
-    // Return the vector of edges
+    // Print point indices for all vertices in the triangulation
+    for (auto vertex = dt.finite_vertices_begin(); vertex != dt.finite_vertices_end(); ++vertex) {
+        auto pt = vertex->point();
+        size_t idx = point_index_map[pt];
+        std::cout << "Point: " << pt << ", Index: " << idx << std::endl;
+    }
+
     return edges;
 }
 
@@ -152,7 +280,7 @@ std::pair<std::vector<Point>, std::vector<Point>> add_steiner_in_convex_polygon_
 int inside_convex_polygon_centroid_steiner_points(std::vector<Point> points, DT dt) {
     std::vector<Point> steiner_points;
     std::pair<std::vector<Point>, std::vector<Point>> all_points;
-    std::vector<std::pair<typename DT::Point, typename DT::Point>> edges;
+    std::vector<std::pair<size_t, size_t>> edges;
 
     bool obtuse_exists = true;
     int obtuse_count = 0;
@@ -179,13 +307,12 @@ int inside_convex_polygon_centroid_steiner_points(std::vector<Point> points, DT 
             if (obtuse_vertex != -1) {
                 obtuse_exists = true;
                 obtuse_count++;
-                CGAL::draw(dt);
             }
         }
         iterations++;
     }
 
-    edges = print_edges(dt);
+    edges = print_edges(dt, all_points.first);
 
     output(edges, steiner_points);
     CGAL::draw(dt);

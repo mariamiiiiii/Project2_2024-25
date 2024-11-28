@@ -53,7 +53,7 @@ void print_rational(const K::FT& coord) {
     std::cout << exact_coord.get_num() << "/" << exact_coord.get_den();
 }
 
-void output(const std::vector<std::pair<Point, Point>>& edges, std::vector<Point> steiner_points_given) {
+void output(const std::vector<std::pair<size_t, size_t>>& edges, std::vector<Point> steiner_points_given) {
     // Creation of property tree
     boost::property_tree::ptree pt;
 
@@ -98,24 +98,15 @@ void output(const std::vector<std::pair<Point, Point>>& edges, std::vector<Point
     boost::property_tree::ptree edges_node;
     for (const auto& edge : edges) {
         boost::property_tree::ptree edge_node;
-        
-        // For each edge's first point
-        boost::property_tree::ptree edge_first;
-        edge_first.put("x", rational_to_string(edge.first.x()));
-        edge_first.put("y", rational_to_string(edge.first.y()));
 
-        // For each edge's second point
-        boost::property_tree::ptree edge_second;
-        edge_second.put("x", rational_to_string(edge.second.x()));
-        edge_second.put("y", rational_to_string(edge.second.y()));
-
-        // Add first and second points to the edge node
-        edge_node.add_child("first", edge_first);
-        edge_node.add_child("second", edge_second);
+        // Directly add indices as JSON properties
+        edge_node.put("first", edge.first);
+        edge_node.put("second", edge.second);
 
         // Add the edge node to edges_node
         edges_node.push_back(std::make_pair("", edge_node));
     }
+
     // Add edges_node to the main output property tree
     output_pt.add_child("edges", edges_node);
 
