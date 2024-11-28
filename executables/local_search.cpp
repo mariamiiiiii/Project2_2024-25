@@ -79,7 +79,7 @@ int local_search(std::vector<Point> points, DT dt, int max_iterations) {
     std::vector<Point> steiner_points;
     std::pair<std::vector<Point>, std::vector<Point>> all_points;
 
-    std::vector<std::pair<typename DT::Point, typename DT::Point>> edges;
+    std::vector<std::pair<size_t, size_t>> edges;
 
     // Insert points into the triangulation
     for (const Point& p : points) {
@@ -103,7 +103,7 @@ int local_search(std::vector<Point> points, DT dt, int max_iterations) {
         iterations++;
     }
 
-    edges = print_edges(dt);
+    edges = print_edges(dt, all_points.first);
     output(edges, steiner_points);
     CGAL::draw(dt);
 
