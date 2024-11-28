@@ -215,7 +215,6 @@ std::vector<Point> find_convex_polygon(DT& dt, FaceHandle current_face) {
 //     }
 // }
 
-// Function to print the edges of the triangulation
 template <typename DT>
 std::vector<std::pair<size_t, size_t>> print_edges(const DT& dt, std::vector<Point> points) {
     std::vector<std::pair<size_t, size_t>> edges; // Corrected the type
