@@ -56,17 +56,24 @@ std::vector<std::pair<size_t, size_t>> print_edges(const DT& dt, std::vector<Poi
         // Store only indices
         edges.emplace_back(idx1, idx2);
 
-        std::cout << "Edge between indices " << idx1 << " and " << idx2 << std::endl;
+        //std::cout << "Edge between indices " << idx1 << " and " << idx2 << std::endl;
     }
 
     // Print point indices for all vertices in the triangulation
-    for (auto vertex = dt.finite_vertices_begin(); vertex != dt.finite_vertices_end(); ++vertex) {
-        auto pt = vertex->point();
-        size_t idx = point_index_map[pt];
-        std::cout << "Point: " << pt << ", Index: " << idx << std::endl;
-    }
+    // for (auto vertex = dt.finite_vertices_begin(); vertex != dt.finite_vertices_end(); ++vertex) {
+    //     auto pt = vertex->point();
+    //     size_t idx = point_index_map[pt];
+    //     std::cout << "Point: " << pt << ", Index: " << idx << std::endl;
+    // }
 
     return edges;
+}
+
+Point longest_edge_center(const Point& p1, const Point& p2) {
+    K::FT mid_x = (p1.x() + p2.x()) / 2;
+    K::FT mid_y = (p1.y() + p2.y()) / 2;
+
+    return Point(mid_x, mid_y);
 }
 
 // Function to add Steiner points instead of flipping edges when a triangle is obtuse
@@ -81,9 +88,10 @@ std::pair<std::vector<Point>, std::vector<Point>> add_steiner_if_obtuse_center(D
             Point p1 = face->vertex((obtuse_vertex + 1) % 3)->point();
             Point p2 = face->vertex((obtuse_vertex + 2) % 3)->point();
             // Calculate the midpoint of the edge opposite the obtuse angle
-            K::FT mid_x = (p1.x() + p2.x()) / 2;
-            K::FT mid_y = (p1.y() + p2.y()) / 2;
-            Point midpoint(mid_x, mid_y);
+            // K::FT mid_x = (p1.x() + p2.x()) / 2;
+            // K::FT mid_y = (p1.y() + p2.y()) / 2;
+            // Point midpoint(mid_x, mid_y);
+            Point midpoint = longest_edge_center(p1, p2);
             // Add the Steiner point to the lists
             steiner_points.push_back(midpoint);
             points.push_back(midpoint);

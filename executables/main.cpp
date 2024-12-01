@@ -13,6 +13,7 @@
 #include "circumcenter.h"
 #include "inside_convex_polygon_centroid.h"
 #include "local_search.h"
+#include "simulated_annealing.h"
 
 // Define CGAL types
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
@@ -101,7 +102,8 @@ int main(int argc, char* argv[]) {
         alpha = parameters["alpha"];
         beta = parameters["beta"];
         L = parameters["L"];
-        //simulated_annealing(points, cdt, alpha, beta, L);
+        simulated_annealing(points, cdt, alpha, beta, L);
+        //center_steiner_points(points, cdt);
         cout << alpha << " and " << beta << endl;
     } else if (method == "ant") {
         alpha = parameters["alpha"];

@@ -1,13 +1,18 @@
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/draw_triangulation_2.h>
+#include <iostream>
+#include <random>
+#include <ctime>
 #include <cmath>
 #include "output.h"
 #include "utils.h"
 #include "simulated_annealing.h"
-#include "projection.h" // Assuming projection method is defined here
-#include "circumcenter.h" // Assuming circumcenter method is defined here
-#include "centroid.h" // Assuming centroid method is defined here
+#include "projection.h"
+#include "circumcenter.h" 
+#include "centroid.h"
+#include "center.h"
+#include "inside_convex_polygon_centroid.h" 
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
 typedef CGAL::Constrained_Delaunay_triangulation_2<K> DT;
@@ -15,7 +20,7 @@ typedef DT::Point Point;
 typedef DT::Edge Edge;
 typedef DT::Face_handle FaceHandle;
 
-double calculateEnergy(DT& dt, double alpha, double beta) {
+double calculateEnergy(DT& dt, double alpha, double beta, int steiner_points_count) {
     int obtuse_count = 0;
     for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
         int obtuse_vertex = obtuse_vertex_index(face);
@@ -24,69 +29,36 @@ double calculateEnergy(DT& dt, double alpha, double beta) {
         }
     }
 
-    return 0.0;//alpha * obtuse_count + beta * steiner_points_count;
+    return alpha * obtuse_count + beta * steiner_points_count;
 }
 
-// Local search function
-std::pair<std::vector<Point>, std::vector<Point>> add_best_steiner_sa(DT& dt, std::vector<Point> steiner_points, std::vector<Point> points) {
-    bool added_steiner = false;
+int generate_random_number() {
+    static std::mt19937 rng(static_cast<unsigned int>(std::time(nullptr)));
+    std::uniform_int_distribution<int> dist(1, 5); // Range [1, 5]
+    return dist(rng); // Generate and return the random number
+}
 
-        // Store obtuse triangles
-        for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
-            int obtuse_vertex = obtuse_vertex_index(face);
-            if (obtuse_vertex != -1) {
-                // Get the vertices of the obtuse triangle
-                Point p_obtuse = face->vertex(obtuse_vertex)->point();
-                Point p1 = face->vertex((obtuse_vertex + 1) % 3)->point();
-                Point p2 = face->vertex((obtuse_vertex + 2) % 3)->point();
+bool accept_new_configuration(double deltaE, double T) {
+    // Initialize random number generator
+    static std::mt19937 rng(static_cast<unsigned int>(std::time(nullptr)));
+    std::uniform_real_distribution<double> dist(0.0, 1.0); // Uniform distribution [0, 1]
 
-                // Test multiple methods for Steiner point placement
-                Point projection_point = project_point_onto_line(p_obtuse, p1, p2);
-                Point circumcenter_point = circumcenter(p_obtuse, p1, p2);
-                Point centroid_point = calculate_centroid(p_obtuse, p1, p2);
-
-                // Evaluate obtuse triangle reduction for each method
-                DT temp_dt = dt;
-                temp_dt.insert(projection_point);
-                int count_projection = count_obtuse_triangles(temp_dt);
-
-                temp_dt = dt;
-                temp_dt.insert(circumcenter_point);
-                int count_circumcenter = count_obtuse_triangles(temp_dt);
-
-                temp_dt = dt;
-                temp_dt.insert(centroid_point);
-                int count_centroid = count_obtuse_triangles(temp_dt);
-
-                // Select the best point
-                Point best_point;
-                int min_count = std::min({count_projection, count_circumcenter, count_centroid});
-                if (min_count == count_projection) {
-                    best_point = projection_point;
-                } else if (min_count == count_circumcenter) {
-                    best_point = circumcenter_point;
-                } else {
-                    best_point = centroid_point;
-                }
-
-                // Add the best point to the DT
-                points.push_back(best_point);
-                steiner_points.push_back(best_point);
-                added_steiner = true;
-            }
-        }
-
-    for (const Point& p : steiner_points) {
-        dt.insert(p);
+    if (deltaE < 0) {
+        // Accept new configuration unconditionally
+        return true;
+    } else {
+        // Calculate probability e^(-∆E/T)
+        double probability = std::exp(-deltaE / T);
+        // Generate a random number in [0, 1]
+        double random = dist(rng);
+        // Accept with probability
+        return random < probability;
     }
-
-    return {steiner_points, points};
 }
 
-int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double beta, int max_iterations) {
-    bool obtuse_exists = true;
-    int obtuse_count = 0;
-    int iterations = 0;
+int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double beta, int L) {
+    double T = 1.0, previous_energy, new_energy, deltaE;
+    int random_number, steiner_count;
 
     std::vector<Point> steiner_points;
     std::pair<std::vector<Point>, std::vector<Point>> all_points;
@@ -100,18 +72,67 @@ int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double b
 
     CGAL::draw(dt);
 
-    while (obtuse_exists && iterations <= max_iterations) {
-        all_points = add_best_steiner_sa(dt, steiner_points, points);
+    previous_energy = calculateEnergy(dt, alpha, beta, steiner_points.size());
+
+
+
+
+    while (T >= 0) {
+
+        DT temp_dt = dt;
+
+        //all_points = add_best_steiner_sa(dt, steiner_points, points, alpha, beta, max_iterations);
         steiner_points = all_points.first;  // Extract Steiner points
         points = all_points.second;        // Extract updated points
-        obtuse_exists = false;
+
         for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
             auto obtuse_vertex = obtuse_vertex_index(face);
             if (obtuse_vertex != -1) {
-                obtuse_exists = true;
+
+                Point p_obtuse = face->vertex(obtuse_vertex)->point();
+                Point p1 = face->vertex((obtuse_vertex + 1) % 3)->point();
+                Point p2 = face->vertex((obtuse_vertex + 2) % 3)->point();
+
+                // Generate a random Steiner point
+                random_number = generate_random_number();
+                Point new_point;
+                switch (random_number) {
+                    case 1:
+                        new_point = project_point_onto_line(p_obtuse, p1, p2);
+                        break;
+                    case 2:
+                        new_point = circumcenter(p_obtuse, p1, p2);
+                        break;
+                    case 3:
+                        new_point = calculate_centroid(p_obtuse, p1, p2);
+                        break;
+                    case 4:
+                        new_point = longest_edge_center(p1, p2);
+                        break;
+                    case 5:
+                        //new_point = find_convex_polygon(dt, face);
+                        break;
+                }
+                
+                points.push_back(new_point);
+                steiner_points.push_back(new_point);
+                dt.insert(new_point);
+                steiner_count++;
+
+                //Calculate the energy's reduction
+                new_energy = calculateEnergy(dt, alpha, beta, steiner_count);
+                deltaE = new_energy - previous_energy;
+
+                if(accept_new_configuration(deltaE, T)) {
+                    previous_energy = new_energy;
+                }
+                else {
+                    dt = temp_dt;
+                    steiner_count--;
+                }
             }
         }
-        iterations++;
+        T = 1 - T/L;
     }
 
     edges = print_edges(dt, all_points.first);
