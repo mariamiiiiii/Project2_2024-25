@@ -9,5 +9,6 @@ typedef CGAL::Exact_predicates_exact_constructions_kernel K;
 typedef CGAL::Constrained_Delaunay_triangulation_2<K> DT; 
 typedef DT::Point Point;
 
+Point longest_edge_center(const Point& p1, const Point& p2);
 
 int center_steiner_points(std::vector<Point> points, DT dt);
