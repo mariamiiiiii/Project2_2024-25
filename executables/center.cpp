@@ -1,4 +1,20 @@
+// #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+// #include "Custom_Constrained_Delaunay_triangulation_2.h"
+// #include <CGAL/Delaunay_triangulation_2.h>
+// #include <CGAL/draw_triangulation_2.h>
+// #include <cmath>
+// #include "center.h"
+// #include "output.h"
+
+
+// typedef CGAL::Exact_predicates_exact_constructions_kernel K;
+// // typedef CGAL::Constrained_Delaunay_triangulation_2<K> DT; 
+// typedef Custom_Constrained_Delaunay_triangulation_2<K> DT;
+// typedef DT::Point Point;
+// typedef DT::Edge Edge;
+// typedef DT::Face_handle FaceHandle;
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include "Custom_Constrained_Delaunay_triangulation_2.h"
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/draw_triangulation_2.h>
 #include <cmath>
@@ -6,10 +22,10 @@
 #include "output.h"
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
-typedef CGAL::Constrained_Delaunay_triangulation_2<K> DT; 
-typedef DT::Point Point;
-typedef DT::Edge Edge;
-typedef DT::Face_handle FaceHandle;
+typedef Custom_Constrained_Delaunay_triangulation_2<K> CustomDT; // Renamed typedef
+typedef CustomDT::Point Point;
+typedef CustomDT::Edge Edge;
+typedef CustomDT::Face_handle FaceHandle;
 
 // Function to calculate the angle between two points and a common vertex
 template <typename P>
@@ -77,37 +93,26 @@ Point longest_edge_center(const Point& p1, const Point& p2) {
 }
 
 // Function to add Steiner points instead of flipping edges when a triangle is obtuse
-template <typename DT>
-std::pair<std::vector<Point>, std::vector<Point>> add_steiner_if_obtuse_center(DT& dt, std::vector<Point> steiner_points, std::vector<Point> points) {
-    bool added_steiner = false;
-
+template <typename CustomDT>
+std::pair<std::vector<Point>, std::vector<Point>> add_steiner_if_obtuse_center(
+    CustomDT& dt, std::vector<Point> steiner_points, std::vector<Point> points) {
     for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
         int obtuse_vertex = obtuse_vertex_index(face);
         if (obtuse_vertex != -1) {
-            // Get the vertices of the obtuse triangle
             Point p1 = face->vertex((obtuse_vertex + 1) % 3)->point();
             Point p2 = face->vertex((obtuse_vertex + 2) % 3)->point();
-            // Calculate the midpoint of the edge opposite the obtuse angle
-            // K::FT mid_x = (p1.x() + p2.x()) / 2;
-            // K::FT mid_y = (p1.y() + p2.y()) / 2;
-            // Point midpoint(mid_x, mid_y);
             Point midpoint = longest_edge_center(p1, p2);
-            // Add the Steiner point to the lists
             steiner_points.push_back(midpoint);
             points.push_back(midpoint);
-            added_steiner = true;
         }
     }
-    // Insert Steiner points into the triangulation and re-triangulate
     for (const Point& p : steiner_points) {
-        dt.insert(p);
+        dt.insert_no_flip(p);
     }
-
-    // Return both steiner_points and points as a pair
     return {steiner_points, points};
 }
 
-int center_steiner_points(std::vector<Point> points, DT dt) {
+int center_steiner_points(std::vector<Point> points, CustomDT dt) {
     std::vector<Point> steiner_points;
     std::pair<std::vector<Point>, std::vector<Point>> all_points;
     bool obtuse_exists = true;
