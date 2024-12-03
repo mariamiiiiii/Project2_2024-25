@@ -14,20 +14,18 @@
 #include "inside_convex_polygon_centroid.h"
 #include "local_search.h"
 #include "simulated_annealing.h"
-#include "Custom_Constrained_Delaunay_triangulation_2.h"
 
 // Define CGAL types
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
-// typedef CGAL::Constrained_Delaunay_triangulation_2<K> CDT;
-typedef Custom_Constrained_Delaunay_triangulation_2<K> CustomDT; // Renamed typedef
-typedef CustomDT::Point Point;
+typedef CGAL::Constrained_Delaunay_triangulation_2<K> CDT;
+typedef CDT::Point Point;
 
 
 using namespace std;
 
 int main(int argc, char* argv[]) {
     // Initialize the Constrained Delaunay Triangulation (CDT)
-    CustomDT cdt;
+    CDT cdt;
 
     // Get data from the executable function
     InputData input = inputs();
@@ -138,7 +136,7 @@ int main(int argc, char* argv[]) {
     // // Execute the chosen method based on user input
     // switch (choice) {
     //     case 1:
-            center_steiner_points(points, cdt);
+    //         center_steiner_points(points, cdt);
     //         break;
     //     case 2:
     //         projection(points, cdt);

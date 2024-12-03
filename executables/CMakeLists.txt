@@ -7,6 +7,7 @@ set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+
 # CGAL and its components with Qt5
 find_package(CGAL REQUIRED COMPONENTS Qt5)
 
@@ -35,23 +36,7 @@ if (NOT Boost_FOUND)
 endif()
 
 # Create the executable with both source files
-add_executable(main 
-    center.cpp 
-    projection.cpp 
-    centroid.cpp 
-    circumcenter.cpp 
-    output.cpp 
-    flipEdges.cpp 
-    inputs.cpp 
-    main.cpp 
-    inside_convex_polygon_centroid.cpp 
-    utils.cpp 
-    local_search.cpp 
-    simulated_annealing.cpp
-)
-
-# Add include directory for header files
-target_include_directories(main PRIVATE ${CMAKE_SOURCE_DIR}/src)
+add_executable(main center.cpp projection.cpp centroid.cpp circumcenter.cpp output.cpp flipEdges.cpp inputs.cpp main.cpp inside_convex_polygon_centroid.cpp utils.cpp local_search.cpp simulated_annealing.cpp)
 
 # Link the executable to CGAL, Boost, Qt5, OpenGL, and GLEW libraries
 target_link_libraries(main 
