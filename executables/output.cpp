@@ -97,14 +97,14 @@ void output(const std::vector<std::pair<size_t, size_t>>& edges, std::vector<Poi
     // Edges
     boost::property_tree::ptree edges_node;
     for (const auto& edge : edges) {
-        boost::property_tree::ptree edge_node;
+        boost::property_tree::ptree edge_array;
 
-        // Directly add indices as JSON properties
-        edge_node.put("first", edge.first);
-        edge_node.put("second", edge.second);
+        // Add the indices to the array
+        edge_array.push_back(boost::property_tree::ptree::value_type("", boost::property_tree::ptree(std::to_string(edge.first))));
+        edge_array.push_back(boost::property_tree::ptree::value_type("", boost::property_tree::ptree(std::to_string(edge.second))));
 
-        // Add the edge node to edges_node
-        edges_node.push_back(std::make_pair("", edge_node));
+        // Add the array to edges_node
+        edges_node.push_back(std::make_pair("", edge_array));
     }
 
     // Add edges_node to the main output property tree

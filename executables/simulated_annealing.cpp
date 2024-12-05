@@ -76,14 +76,14 @@ int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double b
 
 
 
-
-    while (T >= 0) {
-
+    int count;
+    while (count <= 10) {
+        // std::cout << T << "\n";
         DT temp_dt = dt;
 
         //all_points = add_best_steiner_sa(dt, steiner_points, points, alpha, beta, max_iterations);
-        steiner_points = all_points.first;  // Extract Steiner points
-        points = all_points.second;        // Extract updated points
+        // steiner_points = all_points.first;  // Extract Steiner points
+        // points = all_points.second;        // Extract updated points
 
         for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
             auto obtuse_vertex = obtuse_vertex_index(face);
@@ -132,10 +132,12 @@ int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double b
                 }
             }
         }
-        T = 1 - T/L;
+        T = T - 1/L;
+        // std::cout << "T" << T << "\n"; 
+        count++;
     }
 
-    edges = print_edges(dt, all_points.first);
+    edges = print_edges(dt, points);
     output(edges, steiner_points);
     CGAL::draw(dt);
 
