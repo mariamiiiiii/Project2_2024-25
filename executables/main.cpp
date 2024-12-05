@@ -103,6 +103,7 @@ int main(int argc, char* argv[]) {
         beta = parameters["beta"];
         L = parameters["L"];
         simulated_annealing(points, cdt, alpha, beta, L);
+        //cout << alpha << " " << beta << " " << L;
         //center_steiner_points(points, cdt);
         cout << alpha << " and " << beta << endl;
     } else if (method == "ant") {

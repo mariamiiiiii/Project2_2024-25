@@ -46,6 +46,6 @@
     "num_constraints": 0,
     "additional_constraints": [],
     "method": "sa", 
-    "parameters": {"alpha": 2.0, "beta": 0.2, "L": 500}, 
+    "parameters": {"alpha": 2.0, "beta": 0.2, "L": 5}, 
     "delaunay": true
 }
