@@ -89,15 +89,7 @@ int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double b
     previous_energy = calculateEnergy(dt, alpha, beta, steiner_points.size());
     std::cout << " " << steiner_points.size() << " \n";
 
-
-    int count;
     while (T >= 0) {
-        // std::cout << T << "\n";
-        //DT temp_dt = dt;
-
-        //all_points = add_best_steiner_sa(dt, steiner_points, points, alpha, beta, max_iterations);
-        // steiner_points = all_points.first;  // Extract Steiner points
-        // points = all_points.second;        // Extract updated points
 
         for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
             auto obtuse_vertex = obtuse_vertex_index(face);
@@ -143,17 +135,9 @@ int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double b
                     steiner_points.push_back(new_point);
                     dt.insert(new_point);
                 }
-                else {
-                    DT temp_dt;
-                    for (auto vertex = dt.finite_vertices_begin(); vertex != dt.finite_vertices_end(); ++vertex) {
-                        temp_dt.insert(vertex->point());
-                    }
-                }
             }
         }
         T = T - 1.0/L;
-        std::cout << "T" << T << "L" << L << "\n"; 
-        count++;
     }
 
     edges = print_edges(dt, points);

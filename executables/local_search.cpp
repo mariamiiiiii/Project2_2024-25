@@ -64,7 +64,7 @@ std::pair<std::vector<Point>, std::vector<Point>> add_best_steiner(DT& dt, std::
 
                 // Select the best point
                 Point best_point;
-                int min_count = std::min({count_projection, count_circumcenter, count_centroid});
+                int min_count = std::min({count_projection, count_circumcenter, count_centroid, count_center, count_inside_convex_polygon_centroid});
                 if (min_count == count_projection) {
                     best_point = projection_point;
                 } else if (min_count == count_circumcenter) {
@@ -93,7 +93,7 @@ std::pair<std::vector<Point>, std::vector<Point>> add_best_steiner(DT& dt, std::
 
 int local_search(std::vector<Point> points, DT dt, int max_iterations) {
     bool obtuse_exists = true;
-    int obtuse_count = 0;
+    int obtuse_count = 0, obtuse_previous_count = 0;
     int iterations = 0;
 
     std::vector<Point> steiner_points;
@@ -108,8 +108,14 @@ int local_search(std::vector<Point> points, DT dt, int max_iterations) {
 
     CGAL::draw(dt);
 
-    
-    while (obtuse_exists && iterations <= max_iterations) {
+    int counter = 0;
+    while (obtuse_exists && iterations <= max_iterations && counter <= 3) {
+        for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
+            auto obtuse_vertex = obtuse_vertex_index(face);
+            if (obtuse_vertex != -1) {
+                obtuse_previous_count++;
+            }
+        }
         all_points = add_best_steiner(dt, steiner_points, points);
         steiner_points = all_points.first;  // Extract Steiner points
         points = all_points.second;        // Extract updated points
@@ -118,9 +124,13 @@ int local_search(std::vector<Point> points, DT dt, int max_iterations) {
             auto obtuse_vertex = obtuse_vertex_index(face);
             if (obtuse_vertex != -1) {
                 obtuse_exists = true;
+                obtuse_count++;
             }
         }
         iterations++;
+        if (obtuse_count > obtuse_previous_count) {
+            counter++;
+        }
     }
 
     edges = print_edges(dt, all_points.first);
