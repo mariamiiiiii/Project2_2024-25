@@ -5,6 +5,11 @@
 #include <CGAL/draw_triangulation_2.h>
 #include <vector>
 #include <stdexcept> // For runtime_error
+#include <iostream>
+#include <random>
+#include <ctime>
+#include <cmath>
+#include "ant_colony.h"
 #include "utils.h"
 #include "output.h"
 
@@ -35,10 +40,23 @@ K::FT height(const Point& P, const Point& A, const Point& B) {
 }
 
 // Function to calculate the radius-to-height ratio
-K::FT radius_to_height_ratio(const FaceHandle& face) {
+K::FT radius_to_height_ratio(const FaceHandle& face, DT dt) {
     Point A = face->vertex(0)->point();
     Point B = face->vertex(1)->point();
     Point C = face->vertex(2)->point();
+
+    int obtuse_adjacent_triangles_counter = 0;
+
+    if (obtuse_vertex_index(face) != -1) {
+            obtuse_adjacent_triangles_counter++;
+            // Explore neighboring faces
+            for (int i = 0; i < 3; ++i) {
+                FaceHandle neighbor_face = face->neighbor(i);
+                if (!dt.is_infinite(neighbor_face) && obtuse_vertex_index(neighbor_face) != -1) {
+                    obtuse_adjacent_triangles_counter++;
+                }
+            }
+        }
 
     K::FT area = CGAL::abs(CGAL::area(A, B, C));
     if (area == K::FT(0)) {
@@ -60,21 +78,27 @@ K::FT radius_to_height_ratio(const FaceHandle& face) {
     }
 
     K::FT r = circumradius / h;
-    if (r > 2) {
-        return (r - 1) / r > K::FT(0) ? (r - 1) / r : K::FT(0);
-    } else if (r >= 1 && r <= 2) {
-        return r / (2 + r);
-    } else if (r < 1) {
-        return (3 - 2*r) / 3 > K::FT(0) ? (3 - 2*r) / 3 : K::FT(0);
-    } else {
+    if (obtuse_adjacent_triangles_counter >=2) {
         return K::FT(1);
+    } else if (r >= 1 && r <= 2) {
+        return r / (2.0 + r);
+    } else if (r < 1) {
+        return (3.0 - 2.0*r) / 3.0 > K::FT(0) ? (3.0 - 2.0*r) / 3.0 : K::FT(0);
+    } else {
+        return (r - 1.0) / r > K::FT(0) ? (r - 1.0) / r : K::FT(0);
     }
 }
 
-int generate_random_number() {
-    static std::mt19937 rng(static_cast<unsigned int>(std::time(nullptr)));
-    std::uniform_int_distribution<int> dist(1, 5); // Range [1, 5]
-    return dist(rng); // Generate and return the random number
+double calculateDelta(DT& dt, double alpha, double beta, int steiner_points_count) {
+    int obtuse_count = 0;
+    for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
+        int obtuse_vertex = obtuse_vertex_index(face);
+        if (obtuse_vertex != -1) {
+            ++obtuse_count;
+        }
+    }
+
+    return 1.0/(1 + alpha * obtuse_count + beta * steiner_points_count);
 }
 
 
@@ -88,9 +112,20 @@ std::pair<std::vector<Point>, std::vector<Point>> add_best_steiner(
 }
 
 // Ant colony optimization function
-int ant_colony(std::vector<Point> points, DT& dt, int L, int Kappa, int max_iterations) {
+int ant_colony(std::vector<Point> points, DT& dt, int L, int Kappa, int max_iterations, double alpha, double beta, double lamda ) {
     bool obtuse_exists = true;
     int iterations = 0;
+    double pheromone_projection = 0.0; //τ
+    double pheromone_circumcenter = 0.0;
+    double pheromone_midpoint = 0.0;
+    double pheromone_adjacent_obtuse_triangles = 0.0;
+
+    double delta_projection = 0.0;
+    double delta_circumcenter = 0.0;
+    double delta_midpoint = 0.0;
+    double delta_adjacent_obtuse_triangles = 0.0;
+
+    int method_used = 0;
 
     std::vector<Point> steiner_points;
     std::pair<std::vector<Point>, std::vector<Point>> all_points;
@@ -104,11 +139,6 @@ int ant_colony(std::vector<Point> points, DT& dt, int L, int Kappa, int max_iter
 
     CGAL::draw(dt); // Draw initial triangulation
 
-    for (int cycle = 1; cycle < L; cycle++) {
-        for (int ant = 1; ant < Kappa; ant++) {
-            // Stub: implement ant behavior
-        }
-    }
     
     while (obtuse_exists && iterations <= max_iterations) {
         all_points = add_best_steiner(dt, steiner_points, points);
@@ -116,12 +146,65 @@ int ant_colony(std::vector<Point> points, DT& dt, int L, int Kappa, int max_iter
         points = all_points.second;        // Extract updated points
         obtuse_exists = false;
 
-        for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
-            if (obtuse_vertex_index(face) != -1) {
-                obtuse_exists = true;
-                break;
+        int obtuse_count = 0, obtuse_previous_count = 0;  //possible na xreiazetai ena gia kathe methodo???
+
+        for (int cycle = 1; cycle < L; cycle++) {
+            for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
+                auto obtuse_vertex = obtuse_vertex_index(face);
+                if (obtuse_vertex != -1) {
+                    obtuse_previous_count++;
+                }
+            }
+
+            for (int ant = 1; ant < Kappa; ant++) {
+                for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
+                    if (obtuse_vertex_index(face) != -1) {
+                        //ylopoihsh improve tringulation
+
+                        for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
+                            auto obtuse_vertex = obtuse_vertex_index(face);
+                            if (obtuse_vertex != -1) {
+                                obtuse_count++;
+                            }
+                        }
+                        break;
+
+                        //mexri edo
+                    }
+                }   
+            }
+            
+            if(method_used == 1){
+                if(obtuse_count < obtuse_previous_count){
+                    delta_projection = calculateDelta(dt, alpha, beta, steiner_points.size());
+                } else {
+                    delta_projection = 0.0;
+                }
+                pheromone_projection = (1 - lamda) * pheromone_projection + delta_projection;
+            } else if (method_used == 2) {
+                if(obtuse_count < obtuse_previous_count){
+                    delta_circumcenter = calculateDelta(dt, alpha, beta, steiner_points.size());
+                } else {
+                    delta_circumcenter = 0.0;
+                }
+                pheromone_circumcenter = (1 - lamda) * pheromone_circumcenter + delta_circumcenter;
+            } else if (method_used == 3) {
+                if(obtuse_count < obtuse_previous_count){
+                    delta_midpoint = calculateDelta(dt, alpha, beta, steiner_points.size());
+                } else {
+                    delta_midpoint = 0.0;
+                }
+                pheromone_midpoint = (1 - lamda) * pheromone_midpoint + delta_midpoint;
+            } else {
+                if(obtuse_count < obtuse_previous_count){
+                    delta_adjacent_obtuse_triangles = calculateDelta(dt, alpha, beta, steiner_points.size());
+                } else {
+                    delta_adjacent_obtuse_triangles = 0.0;
+                }
+                pheromone_adjacent_obtuse_triangles = (1 - lamda) * pheromone_adjacent_obtuse_triangles + delta_adjacent_obtuse_triangles;
             }
         }
+
         iterations++;
     }
 
