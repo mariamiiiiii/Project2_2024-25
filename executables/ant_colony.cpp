@@ -1,14 +1,15 @@
 #include <CGAL/Simple_cartesian.h>
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/squared_distance_2.h>
 #include <CGAL/draw_triangulation_2.h>
-// #include <CGAL/sqrt.h> // Ensure the sqrt function is correctly used
 #include <vector>
-#include <cmath> // For standard math functions like std::sqrt
+#include <stdexcept> // For runtime_error
+#include "utils.h"
+#include "output.h"
 
 // Define CGAL kernel and types
-typedef CGAL::Exact_predicates_inexact_constructions_kernel K; // Use this kernel for compatibility
+typedef CGAL::Exact_predicates_exact_constructions_kernel K;
 typedef CGAL::Constrained_Delaunay_triangulation_2<K> DT;
 typedef DT::Face_handle FaceHandle;
 typedef DT::Point Point;
@@ -21,43 +22,55 @@ K::FT height(const Point& P, const Point& A, const Point& B) {
     // Length of the line segment AB
     K::FT length_squared = (B.x() - A.x()) * (B.x() - A.x()) + (B.y() - A.y()) * (B.y() - A.y());
 
-    // Compute the height as |det| / sqrt(length_squared)
-    if (length_squared == 0) {
+    if (length_squared == K::FT(0)) {
         throw std::runtime_error("Segment length is zero; cannot compute height.");
     }
-    return CGAL::abs(det) / CGAL::sqrt(length_squared);
+
+    // Convert to an inexact type for sqrt and division
+    double length = CGAL::to_double(length_squared);
+    double abs_det = CGAL::to_double(CGAL::abs(det));
+
+    // Return the height as a K::FT
+    return K::FT(abs_det / std::sqrt(length));
 }
 
 // Function to calculate the radius-to-height ratio
 K::FT radius_to_height_ratio(const FaceHandle& face) {
-    // Compute circumradius
     Point A = face->vertex(0)->point();
     Point B = face->vertex(1)->point();
     Point C = face->vertex(2)->point();
 
-    // Calculate circumradius using squared distance
-    K::FT circumradius_squared = CGAL::squared_distance(A, B) * CGAL::squared_distance(A, C) * CGAL::squared_distance(B, C)
-                                  / (4 * CGAL::abs(CGAL::area(A, B, C)));
-    K::FT circumradius = CGAL::sqrt(circumradius_squared);
+    K::FT area = CGAL::abs(CGAL::area(A, B, C));
+    if (area == K::FT(0)) {
+        throw std::runtime_error("Degenerate triangle; cannot compute circumradius.");
+    }
 
-    // Compute height of triangle base AB
+    K::FT circumradius_squared = CGAL::squared_distance(A, B) * CGAL::squared_distance(A, C) * CGAL::squared_distance(B, C)
+                                  / (4 * area);
+
+    // Convert to double for the square root operation
+    double circumradius_double = std::sqrt(CGAL::to_double(circumradius_squared));
+
+    // Convert back to K::FT
+    K::FT circumradius = K::FT(circumradius_double);
+
     K::FT h = height(C, A, B);
-    
-    // return circumradius / h;
+    if (h == K::FT(0)) {
+        throw std::runtime_error("Height is zero; invalid triangle.");
+    }
 
     K::FT r = circumradius / h;
-    if(r > 2){
-        if((r-1)/r>0){
-            return (r-1)/r;
-        } else {
-            return 0;
-        }
-    } else if (r>=1 && r<=2){
-        return r/(2+r);
-    } else if (r<1){
-        return 1;
-    } else return 0;
+    if (r > 2) {
+        return (r - 1) / r > K::FT(0) ? (r - 1) / r : K::FT(0);
+    } else if (r >= 1 && r <= 2) {
+        return r / (2 + r);
+    } else if (r < 1) {
+        return K::FT(1);
+    } else {
+        return K::FT(0);
+    }
 }
+
 
 // Dummy implementations for missing functions
 std::pair<std::vector<Point>, std::vector<Point>> add_best_steiner(
@@ -66,20 +79,6 @@ std::pair<std::vector<Point>, std::vector<Point>> add_best_steiner(
     const std::vector<Point>& points) {
     // Stub: implement Steiner point optimization
     return {steiner_points, points};
-}
-
-int obtuse_vertex_index(const FaceHandle& face) {
-    // Stub: implement check for obtuse triangle vertices
-    return -1;
-}
-
-std::vector<std::pair<size_t, size_t>> print_edges(const DT& dt, const std::vector<Point>& points) {
-    // Stub: extract edges from the triangulation
-    return {};
-}
-
-void output(const std::vector<std::pair<size_t, size_t>>& edges, const std::vector<Point>& steiner_points) {
-    // Stub: output edges and Steiner points to a file or console
 }
 
 // Ant colony optimization function

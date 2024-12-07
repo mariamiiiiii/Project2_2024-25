@@ -8,6 +8,7 @@
 #include "projection.h" // Assuming projection method is defined here
 #include "circumcenter.h" // Assuming circumcenter method is defined here
 #include "centroid.h" // Assuming centroid method is defined here
+#include "center.h"
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
 typedef CGAL::Constrained_Delaunay_triangulation_2<K> DT;
@@ -32,6 +33,7 @@ std::pair<std::vector<Point>, std::vector<Point>> add_best_steiner(DT& dt, std::
                 Point projection_point = project_point_onto_line(p_obtuse, p1, p2);
                 Point circumcenter_point = circumcenter(p_obtuse, p1, p2);
                 Point centroid_point = calculate_centroid(p_obtuse, p1, p2);
+                Point center = longest_edge_center(p1, p2);
 
                 // Evaluate obtuse triangle reduction for each method
                 DT temp_dt = dt;
