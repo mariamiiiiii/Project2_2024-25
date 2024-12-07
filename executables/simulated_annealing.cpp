@@ -32,20 +32,6 @@ double calculateEnergy(DT& dt, double alpha, double beta, int steiner_points_cou
     return alpha * obtuse_count + beta * steiner_points_count;
 }
 
-double calculateEnergy2(DT& dt, double alpha, double beta, int steiner_points_count) {
-    int obtuse_count = 0;
-    for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
-        int obtuse_vertex = obtuse_vertex_index(face);
-        if (obtuse_vertex != -1) {
-            ++obtuse_count;
-        }
-    }
-    
-    std::cout << "obtuse: " << obtuse_count << " and steiner: " << steiner_points_count << "\n";
-
-    return alpha * obtuse_count + beta * steiner_points_count;
-}
-
 int generate_random_number() {
     static std::mt19937 rng(static_cast<unsigned int>(std::time(nullptr)));
     std::uniform_int_distribution<int> dist(1, 5); // Range [1, 5]
@@ -143,8 +129,6 @@ int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double b
     edges = print_edges(dt, points);
     output(edges, steiner_points);
     CGAL::draw(dt);
-
-    double ala = calculateEnergy2(dt, alpha, beta, steiner_points.size());
 
     return 0;
 }
