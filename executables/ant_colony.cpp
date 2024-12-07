@@ -65,10 +65,16 @@ K::FT radius_to_height_ratio(const FaceHandle& face) {
     } else if (r >= 1 && r <= 2) {
         return r / (2 + r);
     } else if (r < 1) {
-        return K::FT(1);
+        return (3 - 2*r) / 3 > K::FT(0) ? (3 - 2*r) / 3 : K::FT(0);
     } else {
         return K::FT(1);
     }
+}
+
+int generate_random_number() {
+    static std::mt19937 rng(static_cast<unsigned int>(std::time(nullptr)));
+    std::uniform_int_distribution<int> dist(1, 5); // Range [1, 5]
+    return dist(rng); // Generate and return the random number
 }
 
 
