@@ -32,9 +32,23 @@ double calculateEnergy(DT& dt, double alpha, double beta, int steiner_points_cou
     return alpha * obtuse_count + beta * steiner_points_count;
 }
 
+double calculateEnergy2(DT& dt, double alpha, double beta, int steiner_points_count) {
+    int obtuse_count = 0;
+    for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
+        int obtuse_vertex = obtuse_vertex_index(face);
+        if (obtuse_vertex != -1) {
+            ++obtuse_count;
+        }
+    }
+    
+    std::cout << "obtuse: " << obtuse_count << " and steiner: " << steiner_points_count << "\n";
+
+    return alpha * obtuse_count + beta * steiner_points_count;
+}
+
 int generate_random_number() {
     static std::mt19937 rng(static_cast<unsigned int>(std::time(nullptr)));
-    std::uniform_int_distribution<int> dist(1, 5); // Range [1, 5]
+    std::uniform_int_distribution<int> dist(1, 4); // Range [1, 5]
     return dist(rng); // Generate and return the random number
 }
 
@@ -58,7 +72,7 @@ bool accept_new_configuration(double deltaE, double T) {
 
 int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double beta, int L) {
     double T = 1.0, previous_energy, new_energy, deltaE;
-    int random_number, steiner_count;
+    int random_number;
 
     std::vector<Point> steiner_points;
     std::pair<std::vector<Point>, std::vector<Point>> all_points;
@@ -73,13 +87,13 @@ int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double b
     CGAL::draw(dt);
 
     previous_energy = calculateEnergy(dt, alpha, beta, steiner_points.size());
-
+    std::cout << " " << steiner_points.size() << " \n";
 
 
     int count;
     while (count <= 10) {
         // std::cout << T << "\n";
-        DT temp_dt = dt;
+        //DT temp_dt = dt;
 
         //all_points = add_best_steiner_sa(dt, steiner_points, points, alpha, beta, max_iterations);
         // steiner_points = all_points.first;  // Extract Steiner points
@@ -109,26 +123,27 @@ int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double b
                     case 4:
                         new_point = longest_edge_center(p1, p2);
                         break;
-                    case 5:
+                    //case 5:
                         //new_point = find_convex_polygon(dt, face);
-                        break;
+                        //break;
                 }
-                
-                points.push_back(new_point);
-                steiner_points.push_back(new_point);
-                dt.insert(new_point);
-                steiner_count++;
 
                 //Calculate the energy's reduction
-                new_energy = calculateEnergy(dt, alpha, beta, steiner_count);
+                new_energy = calculateEnergy(dt, alpha, beta, steiner_points.size());
+                std::cout << " " << steiner_points.size() << " \n";
                 deltaE = new_energy - previous_energy;
 
                 if(accept_new_configuration(deltaE, T)) {
                     previous_energy = new_energy;
+                    points.push_back(new_point);
+                    steiner_points.push_back(new_point);
+                    dt.insert(new_point);
                 }
                 else {
-                    dt = temp_dt;
-                    steiner_count--;
+                    DT temp_dt;
+                    for (auto vertex = dt.finite_vertices_begin(); vertex != dt.finite_vertices_end(); ++vertex) {
+                        temp_dt.insert(vertex->point());
+                    }
                 }
             }
         }
@@ -140,6 +155,8 @@ int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double b
     edges = print_edges(dt, points);
     output(edges, steiner_points);
     CGAL::draw(dt);
+
+    double ala = calculateEnergy2(dt, alpha, beta, steiner_points.size());
 
     return 0;
 }
