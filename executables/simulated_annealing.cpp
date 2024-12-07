@@ -48,7 +48,7 @@ double calculateEnergy2(DT& dt, double alpha, double beta, int steiner_points_co
 
 int generate_random_number() {
     static std::mt19937 rng(static_cast<unsigned int>(std::time(nullptr)));
-    std::uniform_int_distribution<int> dist(1, 4); // Range [1, 5]
+    std::uniform_int_distribution<int> dist(1, 5); // Range [1, 5]
     return dist(rng); // Generate and return the random number
 }
 
@@ -91,7 +91,7 @@ int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double b
 
 
     int count;
-    while (count <= 10) {
+    while (T >= 0) {
         // std::cout << T << "\n";
         //DT temp_dt = dt;
 
@@ -123,14 +123,18 @@ int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double b
                     case 4:
                         new_point = longest_edge_center(p1, p2);
                         break;
-                    //case 5:
-                        //new_point = find_convex_polygon(dt, face);
-                        //break;
+                    case 5:
+                        // new_point = find_convex_polygon(dt, face);
+                        auto polygon_points = find_convex_polygon(dt, face);
+                        if (!polygon_points.empty()) {  // Only proceed if convex polygon found
+                            new_point = compute_centroid(polygon_points);
+                        }
+                        break;
                 }
 
                 //Calculate the energy's reduction
                 new_energy = calculateEnergy(dt, alpha, beta, steiner_points.size());
-                std::cout << " " << steiner_points.size() << " \n";
+                // std::cout << " " << steiner_points.size() << " \n";
                 deltaE = new_energy - previous_energy;
 
                 if(accept_new_configuration(deltaE, T)) {
@@ -147,8 +151,8 @@ int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double b
                 }
             }
         }
-        T = T - 1/L;
-        // std::cout << "T" << T << "\n"; 
+        T = T - 1.0/L;
+        std::cout << "T" << T << "L" << L << "\n"; 
         count++;
     }
 

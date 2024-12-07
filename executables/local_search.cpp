@@ -9,6 +9,7 @@
 #include "circumcenter.h" // Assuming circumcenter method is defined here
 #include "centroid.h" // Assuming centroid method is defined here
 #include "center.h"
+#include "inside_convex_polygon_centroid.h" 
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
 typedef CGAL::Constrained_Delaunay_triangulation_2<K> DT;
@@ -34,6 +35,11 @@ std::pair<std::vector<Point>, std::vector<Point>> add_best_steiner(DT& dt, std::
                 Point circumcenter_point = circumcenter(p_obtuse, p1, p2);
                 Point centroid_point = calculate_centroid(p_obtuse, p1, p2);
                 Point center = longest_edge_center(p1, p2);
+                Point inside_convex_polygon_centroid;
+                auto polygon_points = find_convex_polygon(dt, face);
+                    if (!polygon_points.empty()) {  // Only proceed if convex polygon found
+                        inside_convex_polygon_centroid = compute_centroid(polygon_points);
+                    }
 
                 // Evaluate obtuse triangle reduction for each method
                 DT temp_dt = dt;
@@ -48,6 +54,14 @@ std::pair<std::vector<Point>, std::vector<Point>> add_best_steiner(DT& dt, std::
                 temp_dt.insert(centroid_point);
                 int count_centroid = count_obtuse_triangles(temp_dt);
 
+                temp_dt = dt;
+                temp_dt.insert(inside_convex_polygon_centroid);
+                int count_inside_convex_polygon_centroid = count_obtuse_triangles(temp_dt);
+
+                temp_dt = dt;
+                temp_dt.insert(center);
+                int count_center = count_obtuse_triangles(temp_dt);
+
                 // Select the best point
                 Point best_point;
                 int min_count = std::min({count_projection, count_circumcenter, count_centroid});
@@ -55,6 +69,10 @@ std::pair<std::vector<Point>, std::vector<Point>> add_best_steiner(DT& dt, std::
                     best_point = projection_point;
                 } else if (min_count == count_circumcenter) {
                     best_point = circumcenter_point;
+                } else if (min_count == count_center) {
+                    best_point = center;
+                } else if (min_count == count_inside_convex_polygon_centroid) {
+                    best_point = inside_convex_polygon_centroid;
                 } else {
                     best_point = centroid_point;
                 }
