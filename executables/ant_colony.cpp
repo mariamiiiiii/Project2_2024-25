@@ -67,7 +67,7 @@ K::FT radius_to_height_ratio(const FaceHandle& face) {
     } else if (r < 1) {
         return K::FT(1);
     } else {
-        return K::FT(0);
+        return K::FT(1);
     }
 }
 
