@@ -4,7 +4,7 @@
 #include <CGAL/squared_distance_2.h>
 #include <CGAL/draw_triangulation_2.h>
 #include <vector>
-#include <stdexcept> // For runtime_error
+#include <stdexcept>
 #include <iostream>
 #include <random>
 #include <ctime>
@@ -31,7 +31,6 @@ K::FT height(const Point& P, const Point& A, const Point& B) {
         throw std::runtime_error("Segment length is zero; cannot compute height.");
     }
 
-    // Convert to an inexact type for sqrt and division
     double length = CGAL::to_double(length_squared);
     double abs_det = CGAL::to_double(CGAL::abs(det));
 
@@ -66,10 +65,8 @@ K::FT radius_to_height_ratio(const FaceHandle& face, DT dt) {
     K::FT circumradius_squared = CGAL::squared_distance(A, B) * CGAL::squared_distance(A, C) * CGAL::squared_distance(B, C)
                                   / (4 * area);
 
-    // Convert to double for the square root operation
     double circumradius_double = std::sqrt(CGAL::to_double(circumradius_squared));
 
-    // Convert back to K::FT
     K::FT circumradius = K::FT(circumradius_double);
 
     K::FT h = height(C, A, B);
@@ -78,6 +75,8 @@ K::FT radius_to_height_ratio(const FaceHandle& face, DT dt) {
     }
 
     K::FT r = circumradius / h;
+
+    //heuristics based on steiner point techniques
     if (obtuse_adjacent_triangles_counter >=2) {
         return K::FT(1);
     } else if (r >= 1 && r <= 2) {
@@ -102,11 +101,7 @@ double calculateDelta(DT& dt, double alpha, double beta, int steiner_points_coun
 }
 
 
-// Dummy implementations for missing functions
-std::pair<std::vector<Point>, std::vector<Point>> add_best_steiner(
-    DT& dt,
-    const std::vector<Point>& steiner_points,
-    const std::vector<Point>& points) {
+std::pair<std::vector<Point>, std::vector<Point>> add_best_steiner(DT& dt, const std::vector<Point>& steiner_points, const std::vector<Point>& points) {
     // Stub: implement Steiner point optimization
     return {steiner_points, points};
 }
@@ -115,7 +110,7 @@ std::pair<std::vector<Point>, std::vector<Point>> add_best_steiner(
 int ant_colony(std::vector<Point> points, DT& dt, int L, int Kappa, int max_iterations, double alpha, double beta, double lamda ) {
     bool obtuse_exists = true;
     int iterations = 0;
-    double pheromone_projection = 0.0; //τ
+    double pheromone_projection = 0.0; 
     double pheromone_circumcenter = 0.0;
     double pheromone_midpoint = 0.0;
     double pheromone_adjacent_obtuse_triangles = 0.0;

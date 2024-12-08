@@ -36,20 +36,6 @@ int obtuse_vertex_index(const FaceHandle& face) {
     return -1;
 }
 
-// Function to check if a triangle is obtuse and return the index and angle of the obtuse vertex
-template <typename FaceHandle>
-std::pair<int, double> obtuse_vertex_index_and_angle(const FaceHandle& face) {
-    double angle1 = angle_between(face->vertex(0)->point(), face->vertex(1)->point(), face->vertex(2)->point());
-    double angle2 = angle_between(face->vertex(1)->point(), face->vertex(2)->point(), face->vertex(0)->point());
-    double angle3 = angle_between(face->vertex(2)->point(), face->vertex(0)->point(), face->vertex(1)->point());
-    
-    if (angle1 > 90.0 + 0.01) return std::make_pair(0, angle1);
-    if (angle2 > 90.0 + 0.01) return std::make_pair(1, angle2);
-    if (angle3 > 90.0 + 0.01) return std::make_pair(2, angle3);
-    
-    return std::make_pair(-1, 0.0); 
-}
-
 // Function to print the edges of the triangulation
 template <typename DT>
 std::vector<std::pair<size_t, size_t>> print_edges(const DT& dt, std::vector<Point> points) {
@@ -71,14 +57,6 @@ std::vector<std::pair<size_t, size_t>> print_edges(const DT& dt, std::vector<Poi
         // Store only indices
         edges.emplace_back(idx1, idx2);
 
-        std::cout << "Edge between indices " << idx1 << " and " << idx2 << std::endl;
-    }
-
-    // Print point indices for all vertices in the triangulation
-    for (auto vertex = dt.finite_vertices_begin(); vertex != dt.finite_vertices_end(); ++vertex) {
-        auto pt = vertex->point();
-        size_t idx = point_index_map[pt];
-        std::cout << "Point: " << pt << ", Index: " << idx << std::endl;
     }
 
     return edges;
@@ -130,7 +108,6 @@ std::pair<std::vector<Point>, std::vector<Point>> add_steiner_if_obtuse(DT& dt, 
 
 int projection(std::vector<Point> points, DT dt) {
     bool obtuse_exists = true;
-    int obtuse_count = 0;
     int iterations = 0;
 
     std::vector<Point> steiner_points;
@@ -154,11 +131,10 @@ int projection(std::vector<Point> points, DT dt) {
         points = all_points.second;        // Extract updated points
         obtuse_exists = false;
         for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
-            auto obtuse = obtuse_vertex_index_and_angle(face);
-            auto obtuse_vertex = std::get<0>(obtuse);
-            auto obtuse_angle = std::get<1>(obtuse);
+            int obtuse_vertex = obtuse_vertex_index(face);
             if (obtuse_vertex != -1) {
                 obtuse_exists = true;
+                break;
             }
         }
         iterations++;

@@ -18,14 +18,12 @@ typedef DT::Face_handle FaceHandle;
 typedef K::FT FT;
 typedef CGAL::Polygon_2<K> Polygon;
 
-
-// Συνάρτηση για έλεγχο αν ένα σημείο είναι εντός του κυρτού περιβλήματος
+//Function to check whether a point is inside convex hull
 bool is_within_convex_hull(const Point& p, const std::vector<Point>& convex_hull) {
     Polygon hull_polygon(convex_hull.begin(), convex_hull.end());
     return CGAL::bounded_side_2(hull_polygon.vertices_begin(), hull_polygon.vertices_end(), p, K()) 
            != CGAL::ON_UNBOUNDED_SIDE;
 }
-
 
 // Function to calculate the angle between two points and a common vertex
 template <typename P>
@@ -52,26 +50,11 @@ int obtuse_vertex_index(const FaceHandle& face) {
     return -1;
 }
 
-template <typename FaceHandle>
-std::pair<int, double> obtuse_vertex_index_and_angle(const FaceHandle& face) {
-    double angle1 = angle_between(face->vertex(0)->point(), face->vertex(1)->point(), face->vertex(2)->point());
-    double angle2 = angle_between(face->vertex(1)->point(), face->vertex(2)->point(), face->vertex(0)->point());
-    double angle3 = angle_between(face->vertex(2)->point(), face->vertex(0)->point(), face->vertex(1)->point());
-    
-    if (angle1 > 90.0) return std::make_pair(0, angle1);
-    if (angle2 > 90.0) return std::make_pair(1, angle2);
-    if (angle3 > 90.0) return std::make_pair(2, angle3);
-    
-    return std::make_pair(-1, 0.0);  // No obtuse angle
-}
-
 // Function to calculate the circumcenter of a triangle
 Point circumcenter(const Point& p1, const Point& p2, const Point& p3) {
     // Using the CGAL function to calculate the circumcenter
     return CGAL::circumcenter(p1, p2, p3);
 }
-
-
 
 // Function to print the edges of the triangulation
 template <typename DT>
@@ -93,15 +76,6 @@ std::vector<std::pair<size_t, size_t>> print_edges(const DT& dt, std::vector<Poi
 
         // Store only indices
         edges.emplace_back(idx1, idx2);
-
-        std::cout << "Edge between indices " << idx1 << " and " << idx2 << std::endl;
-    }
-
-    // Print point indices for all vertices in the triangulation
-    for (auto vertex = dt.finite_vertices_begin(); vertex != dt.finite_vertices_end(); ++vertex) {
-        auto pt = vertex->point();
-        size_t idx = point_index_map[pt];
-        std::cout << "Point: " << pt << ", Index: " << idx << std::endl;
     }
 
     return edges;
@@ -128,8 +102,7 @@ std::pair<std::vector<Point>, std::vector<Point>> add_steiner_in_centroid(DT& dt
         }
     }
 
-
-    // Insert Steiner points into the triangulation and re-triangulate
+    // Insert Steiner points into the triangulation
     for (const Point& p : steiner_points) {
         dt.insert(p);
     }
@@ -144,7 +117,6 @@ int circumcenter_steiner_points(std::vector<Point> points, DT dt) {
     std::vector<std::pair<size_t, size_t>> edges;
 
     bool obtuse_exists = true;
-    int obtuse_count = 0;
     int iterations = 0;
     
     std::vector<Point> steiner_points;
@@ -157,44 +129,23 @@ int circumcenter_steiner_points(std::vector<Point> points, DT dt) {
 
     CGAL::draw(dt);
 
-    obtuse_count = 0;  
-    for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
-        int obtuse_vertex = obtuse_vertex_index(face);
-        if (obtuse_vertex != -1) {
-            obtuse_count++;
-        }
-    }
-
     while (obtuse_exists && iterations <= 5) {
-        
         all_points = add_steiner_in_centroid(dt, steiner_points, points, convex_hull);
         steiner_points = all_points.first;  // Extract Steiner points
         points = all_points.second;        // Extract updated points
         
         obtuse_exists = false;
-        obtuse_count = 0;
 
         for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
-            auto obtuse = obtuse_vertex_index_and_angle(face);
-            auto obtuse_vertex = std::get<0>(obtuse);
-            auto obtuse_angle = std::get<1>(obtuse);
+            int obtuse_vertex = obtuse_vertex_index(face);
             if (obtuse_vertex != -1) {
                 obtuse_exists = true;
-                obtuse_count++;
-
-                // Get coordinates of the obtuse vertex and print detailed information
-                Point obtuse_point = face->vertex(obtuse_vertex)->point();
-
-                // Print the coordinates of the other two vertices
-                Point p1 = face->vertex((obtuse_vertex + 1) % 3)->point();
-                Point p2 = face->vertex((obtuse_vertex + 2) % 3)->point();
+                break;
             }
         }
         iterations++;
     }
-
     edges = print_edges(dt, all_points.first);
-
     output(edges, steiner_points);
     CGAL::draw(dt);
 

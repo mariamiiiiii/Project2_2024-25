@@ -69,14 +69,6 @@ std::vector<std::pair<size_t, size_t>> print_edges(const DT& dt, std::vector<Poi
         // Store only indices
         edges.emplace_back(idx1, idx2);
 
-        std::cout << "Edge between indices " << idx1 << " and " << idx2 << std::endl;
-    }
-
-    // Print point indices for all vertices in the triangulation
-    for (auto vertex = dt.finite_vertices_begin(); vertex != dt.finite_vertices_end(); ++vertex) {
-        auto pt = vertex->point();
-        size_t idx = point_index_map[pt];
-        std::cout << "Point: " << pt << ", Index: " << idx << std::endl;
     }
 
     return edges;

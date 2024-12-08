@@ -47,7 +47,7 @@ Point calculate_centroid(const Point& p1, const Point& p2, const Point& p3) {
 // Function to print the edges of the triangulation
 template <typename DT>
 std::vector<std::pair<size_t, size_t>> print_edges(const DT& dt, std::vector<Point> points) {
-    std::vector<std::pair<size_t, size_t>> edges; // Corrected the type
+    std::vector<std::pair<size_t, size_t>> edges;
 
     // Create a map from Point to its index in the points vector
     std::map<typename DT::Point, size_t> point_index_map;
@@ -64,29 +64,9 @@ std::vector<std::pair<size_t, size_t>> print_edges(const DT& dt, std::vector<Poi
 
         // Store only indices
         edges.emplace_back(idx1, idx2);
-
-        std::cout << "Edge between indices " << idx1 << " and " << idx2 << std::endl;
-    }
-
-    // Print point indices for all vertices in the triangulation
-    for (auto vertex = dt.finite_vertices_begin(); vertex != dt.finite_vertices_end(); ++vertex) {
-        auto pt = vertex->point();
-        size_t idx = point_index_map[pt];
-        std::cout << "Point: " << pt << ", Index: " << idx << std::endl;
     }
 
     return edges;
-}
-
-template <typename FaceHandle>
-std::pair<int, double> obtuse_vertex_index_and_angle(const FaceHandle& face) {
-    double angle1 = angle_between(face->vertex(0)->point(), face->vertex(1)->point(), face->vertex(2)->point());
-    double angle2 = angle_between(face->vertex(1)->point(), face->vertex(2)->point(), face->vertex(0)->point());
-    double angle3 = angle_between(face->vertex(2)->point(), face->vertex(0)->point(), face->vertex(1)->point()); 
-    if (angle1 > 90.0 + 0.01) return std::make_pair(0, angle1);
-    if (angle2 > 90.0 + 0.01) return std::make_pair(1, angle2);
-    if (angle3 > 90.0 + 0.01) return std::make_pair(2, angle3);
-    return std::make_pair(-1, 0.0);
 }
 
 // Function to add Steiner points at the circumcenters of obtuse triangles inside a convex polygon
@@ -128,26 +108,23 @@ int centroid_steiner_points(std::vector<Point> points, DT dt) {
         dt.insert(p);
     }
     CGAL::draw(dt);
-    for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
-        int obtuse_vertex = obtuse_vertex_index(face);
-    }
     while (obtuse_exists && iterations <= 5) {
         all_points = add_steiner_in_centroid(dt, steiner_points, points);
         steiner_points = all_points.first;  // Extract Steiner points
         points = all_points.second;        // Extract updated points
+
         obtuse_exists = false;
         for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
-            auto obtuse = obtuse_vertex_index_and_angle(face);
-            auto obtuse_vertex = std::get<0>(obtuse);
-            auto obtuse_angle = std::get<1>(obtuse);
+            int obtuse_vertex = obtuse_vertex_index(face);
             if (obtuse_vertex != -1) {
                 obtuse_exists = true;
+                break;
             }
         }
         iterations++;
     }
-
     edges = print_edges(dt, all_points.first);
+    output(edges, steiner_points);
     CGAL::draw(dt);
     return 0;
 }
