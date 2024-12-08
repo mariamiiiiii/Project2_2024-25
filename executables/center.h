@@ -12,4 +12,4 @@ typedef DT::Point Point;
 
 Point longest_edge_center(const Point& p1, const Point& p2);
 
-int center_steiner_points(std::vector<Point> points, DT dt, const std::string& input_file, const std::string& output_file);
+DT center_steiner_points(std::vector<Point> points, DT dt);

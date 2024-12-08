@@ -33,22 +33,6 @@ bool is_obtuse_triangle(const FaceHandle& face) {
     return (angle1 > 90.0 || angle2 > 90.0 || angle3 > 90.0);
 }
 
-// Function to print the edges of the triangulation
-// template <typename DT>
-// std::vector<std::pair<typename DT::Point, typename DT::Point>> print_edges(const DT& dt) {
-//     // Define a vector to hold pairs of points representing edges
-//     std::vector<std::pair<typename DT::Point, typename DT::Point>> edges;
-
-//     for (auto edge = dt.finite_edges_begin(); edge != dt.finite_edges_end(); ++edge) {
-//         auto v1 = edge->first->vertex((edge->second + 1) % 3)->point();
-//         auto v2 = edge->first->vertex((edge->second + 2) % 3)->point();
-//         // Add the edge to the vector
-//         edges.emplace_back(v1, v2);
-//     }
-//     // Return the vector of edges
-//     return edges;
-// }
-
 // Function to flip the diagonal if there are obtuse triangles
 template <typename DT>
 void flip_if_obtuse(DT& dt) {
@@ -66,7 +50,7 @@ void flip_if_obtuse(DT& dt) {
     }
 }
 
-int flip_edges(std::vector<Point> points, DT dt) {
+DT flip_edges(std::vector<Point> points, DT dt) {
     std::vector<std::pair<typename DT::Point, typename DT::Point>> edges;
 
     // Insert points into the triangulation
@@ -74,15 +58,8 @@ int flip_edges(std::vector<Point> points, DT dt) {
         dt.insert(p);
     }
 
-    CGAL::draw(dt);
     // Flip obtuse edges if possible
     flip_if_obtuse(dt);
 
-
-    // edges = print_edges(dt);
-    // output(edges, {});
-
-    CGAL::draw(dt);
-
-    return 0;
+    return dt;
 }

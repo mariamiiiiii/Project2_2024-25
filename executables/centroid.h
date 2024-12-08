@@ -12,4 +12,4 @@ typedef DT::Point Point;
 
 Point calculate_centroid(const Point& p1, const Point& p2, const Point& p3);
 
-int centroid_steiner_points(std::vector<Point> points, DT dt, const std::string& input_file, const std::string& output_file);
+DT centroid_steiner_points(std::vector<Point> points, DT dt);

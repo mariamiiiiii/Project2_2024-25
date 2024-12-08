@@ -47,29 +47,3 @@ int count_obtuse_triangles(const DT& dt) {
     }
     return count;
 }
-
-// Function to print the edges of the triangulation
-template <typename DT>
-std::vector<std::pair<size_t, size_t>> print_edges(const DT& dt, std::vector<Point> points) {
-    std::vector<std::pair<size_t, size_t>> edges; // Corrected the type
-
-    // Create a map from Point to its index in the points vector
-    std::map<typename DT::Point, size_t> point_index_map;
-    for (size_t i = 0; i < points.size(); ++i) {
-        point_index_map[points[i]] = i;
-    }
-
-    // Print edges and their indices
-    for (auto edge = dt.finite_edges_begin(); edge != dt.finite_edges_end(); ++edge) {
-        auto v1 = edge->first->vertex((edge->second + 1) % 3)->point();
-        auto v2 = edge->first->vertex((edge->second + 2) % 3)->point();
-        size_t idx1 = point_index_map[v1];
-        size_t idx2 = point_index_map[v2];
-
-        // Store only indices
-        edges.emplace_back(idx1, idx2);
-
-    }
-
-    return edges;
-}

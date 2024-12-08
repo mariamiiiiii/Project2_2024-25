@@ -10,4 +10,4 @@ typedef DT::Point Point;
 typedef DT::Edge Edge;
 typedef DT::Face_handle FaceHandle;
 
-int flip_edges(std::vector<Point> points, DT dt);
+DT flip_edges(std::vector<Point> points, DT dt);

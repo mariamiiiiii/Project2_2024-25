@@ -60,6 +60,7 @@ bool accept_new_configuration(double deltaE, double T) {
 int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double beta, int L, const std::string& input_file, const std::string& output_file) {
     double T = 1.0, previous_energy, new_energy, deltaE;
     int random_number;
+    int obtuse_count;
 
     std::vector<Point> steiner_points;
     std::pair<std::vector<Point>, std::vector<Point>> all_points;
@@ -74,7 +75,6 @@ int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double b
     CGAL::draw(dt);
 
     previous_energy = calculateEnergy(dt, alpha, beta, steiner_points.size());
-    std::cout << " " << steiner_points.size() << " \n";
 
     while (T >= 0) {
 
@@ -125,8 +125,15 @@ int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double b
         T = T - 1.0/L;
     }
 
+    for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
+        auto obtuse_vertex = obtuse_vertex_index(face);
+        if (obtuse_vertex != -1) {
+            obtuse_count++;
+        }
+    }
+
     edges = print_edges(dt, points);
-    output(edges, steiner_points, input_file, output_file);
+    output(edges, steiner_points, input_file, output_file, obtuse_count);
     CGAL::draw(dt);
 
     return 0;

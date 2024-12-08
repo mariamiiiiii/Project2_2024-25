@@ -8,9 +8,12 @@
 #include "output.h"
 #include "inputs.h"
 #include <string>
-#include <sstream> 
+#include <sstream>
 #include <boost/algorithm/string/replace.hpp>
 #include <fstream>
+#include <map>
+#include <set>
+#include <gmpxx.h>
 
 // Define CGAL types
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
@@ -48,12 +51,16 @@ std::string rational_to_string(const K::FT& coord) {
     }
 }
 
-void print_rational(const K::FT& coord) {
-    const auto exact_coord = CGAL::exact(coord);
-    std::cout << exact_coord.get_num() << "/" << exact_coord.get_den();
+// Function to convert a map into a boost::property_tree::ptree
+boost::property_tree::ptree map_to_ptree(const std::map<std::string, double>& map) {
+    boost::property_tree::ptree pt;
+    for (const auto& [key, value] : map) {
+        pt.put(key, value);
+    }
+    return pt;
 }
 
-void output(const std::vector<std::pair<size_t, size_t>>& edges, std::vector<Point> steiner_points_given, const std::string& input_file, const std::string& output_file) {
+void output(const std::vector<std::pair<size_t, size_t>>& edges, std::vector<Point> steiner_points_given, const std::string& input_file, const std::string& output_file, int obtuse_count) {
     // Creation of property tree
     boost::property_tree::ptree pt;
 
@@ -66,6 +73,20 @@ void output(const std::vector<std::pair<size_t, size_t>>& edges, std::vector<Poi
 
     // Get data from property tree
     std::string instance_uid = pt.get<std::string>("instance_uid");
+    std::string method = pt.get<std::string>("method");
+
+    // Specify known integer parameters
+    std::set<std::string> int_parameters = {"kappa", "L"};
+
+    // Populate the parameters map with either integer or double based on the known types
+    std::map<std::string, double> parameters;
+    for (const auto& item : pt.get_child("parameters")) {
+        if (int_parameters.find(item.first) != int_parameters.end()) {
+            parameters[item.first] = static_cast<double>(item.second.get_value<int>());
+        } else {
+            parameters[item.first] = item.second.get_value<double>();
+        }
+    }
 
     std::vector<Point> steiner_points = steiner_points_given;
 
@@ -109,6 +130,13 @@ void output(const std::vector<std::pair<size_t, size_t>>& edges, std::vector<Poi
 
     // Add edges_node to the main output property tree
     output_pt.add_child("edges", edges_node);
+
+    output_pt.put("obtuse_count", obtuse_count);
+
+    output_pt.put("method", method);
+
+    // Add the parameters as a child
+    output_pt.add_child("parameters", map_to_ptree(parameters));
 
     // Write the output JSON to a file
     try {

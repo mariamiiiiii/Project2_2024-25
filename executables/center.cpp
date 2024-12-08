@@ -3,7 +3,7 @@
 #include <CGAL/draw_triangulation_2.h>
 #include <cmath>
 #include "center.h"
-#include "output.h"
+// #include "output.h"
 #include <string>
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
@@ -33,31 +33,6 @@ int obtuse_vertex_index(const FaceHandle& face) {
     if (angle2 > 90.0 + 0.01) return 1;
     if (angle3 > 90.0 + 0.01) return 2;
     return -1;
-}
-
-// Function to print the edges of the triangulation
-template <typename DT>
-std::vector<std::pair<size_t, size_t>> print_edges(const DT& dt, std::vector<Point> points) {
-    std::vector<std::pair<size_t, size_t>> edges;
-
-    // Create a map from Point to its index in the points vector
-    std::map<typename DT::Point, size_t> point_index_map;
-    for (size_t i = 0; i < points.size(); ++i) {
-        point_index_map[points[i]] = i;
-    }
-
-    // Print edges and their indices
-    for (auto edge = dt.finite_edges_begin(); edge != dt.finite_edges_end(); ++edge) {
-        auto v1 = edge->first->vertex((edge->second + 1) % 3)->point();
-        auto v2 = edge->first->vertex((edge->second + 2) % 3)->point();
-        size_t idx1 = point_index_map[v1];
-        size_t idx2 = point_index_map[v2];
-
-        // Store only indices
-        edges.emplace_back(idx1, idx2);
-    }
-
-    return edges;
 }
 
 Point longest_edge_center(const Point& p1, const Point& p2) {
@@ -94,18 +69,18 @@ std::pair<std::vector<Point>, std::vector<Point>> add_steiner_if_obtuse_center(D
     return {steiner_points, points};
 }
 
-int center_steiner_points(std::vector<Point> points, DT dt, const std::string& input_file, const std::string& output_file) {
+DT center_steiner_points(std::vector<Point> points, DT dt) {
     std::vector<Point> steiner_points;
     std::pair<std::vector<Point>, std::vector<Point>> all_points;
     bool obtuse_exists = true;
+    int obtuse_counter=0, previous_obtuse_counter=0, counter=0;
     int iterations = 0;
     std::vector<std::pair<size_t, size_t>> edges;
     // Insert points into the triangulation
     for (const Point& p : points) {
         dt.insert(p);
     }
-    CGAL::draw(dt);
-    while (obtuse_exists && iterations <= 5) {
+    while (obtuse_exists && iterations <= 5 && counter < 3) {
         all_points = add_steiner_if_obtuse_center(dt, steiner_points, points);
         steiner_points = all_points.first;  // Extract Steiner points
         points = all_points.second;        // Extract updated points
@@ -115,14 +90,14 @@ int center_steiner_points(std::vector<Point> points, DT dt, const std::string& i
             int obtuse_vertex = obtuse_vertex_index(face);
             if (obtuse_vertex != -1) {
                 obtuse_exists = true;
-                break;
+                obtuse_counter++;
             }
-
         }
         iterations++;
+        if(obtuse_counter > previous_obtuse_counter){
+            counter++;
+            previous_obtuse_counter = obtuse_counter;
+        }
     }
-    edges = print_edges(dt, all_points.first);
-    output(edges, steiner_points, input_file, output_file);
-    CGAL::draw(dt);
-    return 0;
+    return dt;
 }

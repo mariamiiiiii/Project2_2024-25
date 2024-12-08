@@ -116,69 +116,87 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    if (method == "local") {
-        L = parameters["L"];
-        local_search(points, cdt, L, input_file, output_file);
-    } else if (method == "sa") {
-        alpha = parameters["alpha"];
-        beta = parameters["beta"];
-        L = parameters["L"];
-        simulated_annealing(points, cdt, alpha, beta, L, input_file, output_file);
-        //cout << alpha << " " << beta << " " << L;
-        //center_steiner_points(points, cdt);
-        cout << alpha << " and " << beta << endl;
-    } else if (method == "ant") {
-        alpha = parameters["alpha"];
-        beta = parameters["beta"];
-        xi = parameters["xi"];
-        psi = parameters["psi"];
-        lambda = parameters["lambda"];
-        kappa = parameters["kappa"];
-        L = parameters["L"];
+    if(isDelaunay){
+        // Prompt user to choose the Steiner point insertion method
+        cout << "Please choose a method for Steiner points from the following options:\n";
+        cout << "1: Center of longest edge\n";
+        cout << "2: Projection\n";
+        cout << "3: Circumcenter\n";
+        cout << "4: Centroid of internal convex polygon\n";
+        cout << "5: Centroid\n";
+        cout << "6: Flip\n";
+        cout << "Enter the number corresponding to your choice: ";
+
+        int choice;
+        cin >> choice;
+
+        // Execute the chosen method based on user input
+        switch (choice) {
+            case 1:
+                cdt = center_steiner_points(points, cdt);
+                break;
+            case 2:
+                cdt = projection(points, cdt);
+                break;
+            case 3:
+                cdt = circumcenter_steiner_points(points, cdt);
+                break;
+            case 4:
+                cdt = inside_convex_polygon_centroid_steiner_points(points, cdt);
+                break;
+            case 5:
+                cdt = centroid_steiner_points(points, cdt);
+                break;
+            case 6:
+                cdt = flip_edges(points, cdt);
+                break;
+            default:
+                cerr << "Invalid choice. Please enter a number between 1 and 5.\n";
+                return 1;
+        }
+        if (method == "local") {
+            L = parameters["L"];
+            local_search(points, cdt, L, input_file, output_file);
+        } else if (method == "sa") {
+            alpha = parameters["alpha"];
+            beta = parameters["beta"];
+            L = parameters["L"];
+            simulated_annealing(points, cdt, alpha, beta, L, input_file, output_file);
+        } else if (method == "ant") {
+            alpha = parameters["alpha"];
+            beta = parameters["beta"];
+            xi = parameters["xi"];
+            psi = parameters["psi"];
+            lambda = parameters["lambda"];
+            kappa = parameters["kappa"];
+            L = parameters["L"];
+        } else {
+            cerr << "Invalid method specified." << endl;
+            return 1;
+        }
+    
     } else {
-        cerr << "Invalid method specified." << endl;
-        return 1;
+        if (method == "local") {
+            L = parameters["L"];
+            local_search(points, cdt, L, input_file, output_file);
+        } else if (method == "sa") {
+            alpha = parameters["alpha"];
+            beta = parameters["beta"];
+            L = parameters["L"];
+            simulated_annealing(points, cdt, alpha, beta, L, input_file, output_file);
+        } else if (method == "ant") {
+            alpha = parameters["alpha"];
+            beta = parameters["beta"];
+            xi = parameters["xi"];
+            psi = parameters["psi"];
+            lambda = parameters["lambda"];
+            kappa = parameters["kappa"];
+            L = parameters["L"];
+        } else {
+            cerr << "Invalid method specified." << endl;
+            return 1;
+        }
     }
-
-    //local_search(points, cdt, L);
-
-    // // Prompt user to choose the Steiner point insertion method
-    // cout << "Please choose a method for Steiner points from the following options:\n";
-    // cout << "1: Center of longest edge\n";
-    // cout << "2: Projection\n";
-    // cout << "3: Circumcenter\n";
-    // cout << "4: Centroid of internal convex polygon\n";
-    // cout << "5: Centroid\n";
-    // cout << "6: Flip\n";
-    // cout << "Enter the number corresponding to your choice: ";
-
-    // int choice;
-    // cin >> choice;
-
-    // // Execute the chosen method based on user input
-    // switch (choice) {
-    //     case 1:
-    //         center_steiner_points(points, cdt);
-    //         break;
-    //     case 2:
-    //         projection(points, cdt);
-    //         break;
-    //     case 3:
-    //         circumcenter_steiner_points(points, cdt);
-    //         break;
-    //     case 4:
-    //         inside_convex_polygon_centroid_steiner_points(points, cdt);
-    //         break;
-    //     case 5:
-    //         centroid_steiner_points(points, cdt);
-    //         break;
-    //     case 6:
-    //         flip_edges(points, cdt);
-    //         break;
-    //     default:
-    //         cerr << "Invalid choice. Please enter a number between 1 and 5.\n";
-    //         return 1;
-    // }
 
     return 0;
 }
