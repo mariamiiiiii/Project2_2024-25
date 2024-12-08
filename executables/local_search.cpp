@@ -5,9 +5,9 @@
 #include "output.h"
 #include "utils.h"
 #include "local_search.h"
-#include "projection.h" // Assuming projection method is defined here
-#include "circumcenter.h" // Assuming circumcenter method is defined here
-#include "centroid.h" // Assuming centroid method is defined here
+#include "projection.h" 
+#include "circumcenter.h"
+#include "centroid.h"
 #include "center.h"
 #include "inside_convex_polygon_centroid.h" 
 
@@ -17,7 +17,7 @@ typedef DT::Point Point;
 typedef DT::Edge Edge;
 typedef DT::Face_handle FaceHandle;
 
-// Local search function
+// Find best Steiner
 std::pair<std::vector<Point>, std::vector<Point>> add_best_steiner(DT& dt, std::vector<Point> steiner_points, std::vector<Point> points) {
     bool added_steiner = false;
 

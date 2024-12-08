@@ -102,7 +102,6 @@ int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double b
                         new_point = longest_edge_center(p1, p2);
                         break;
                     case 5:
-                        // new_point = find_convex_polygon(dt, face);
                         auto polygon_points = find_convex_polygon(dt, face);
                         if (!polygon_points.empty()) {  // Only proceed if convex polygon found
                             new_point = compute_centroid(polygon_points);
@@ -112,7 +111,6 @@ int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double b
 
                 //Calculate the energy's reduction
                 new_energy = calculateEnergy(dt, alpha, beta, steiner_points.size());
-                // std::cout << " " << steiner_points.size() << " \n";
                 deltaE = new_energy - previous_energy;
 
                 if(accept_new_configuration(deltaE, T)) {
