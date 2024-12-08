@@ -101,6 +101,18 @@ double calculateDelta(DT& dt, double alpha, double beta, int steiner_points_coun
     return 1.0/(1 + alpha * obtuse_count + beta * steiner_points_count);
 }
 
+double steiner_point_probability(double t, double ) {
+    // Initialize random number generator
+    static std::mt19937 rng(static_cast<unsigned int>(std::time(nullptr)));
+    std::uniform_real_distribution<double> dist(0.0, 1.0); // Uniform distribution [0, 1]
+
+        double probability = std::pow(t, x) * std::pow(h, y);
+        // Generate a random number in [0, 1]
+        double random = dist(rng);
+        // Accept with probability
+        return random < probability;
+
+}
 
 std::pair<std::vector<Point>, std::vector<Point>> add_best_steiner(DT& dt, const std::vector<Point>& steiner_points, const std::vector<Point>& points) {
     // Stub: implement Steiner point optimization
@@ -111,10 +123,10 @@ std::pair<std::vector<Point>, std::vector<Point>> add_best_steiner(DT& dt, const
 int ant_colony(std::vector<Point> points, DT& dt, int L, int Kappa, int max_iterations, double alpha, double beta, double lamda, const std::string& input_file, const std::string& output_file ) {
     bool obtuse_exists = true;
     int iterations = 0;
-    double pheromone_projection = 0.0; 
-    double pheromone_circumcenter = 0.0;
-    double pheromone_midpoint = 0.0;
-    double pheromone_adjacent_obtuse_triangles = 0.0;
+    double pheromone_projection = 1.0; 
+    double pheromone_circumcenter = 1.0;
+    double pheromone_midpoint = 1.0;
+    double pheromone_adjacent_obtuse_triangles = 1.0;
 
     double delta_projection = 0.0;
     double delta_circumcenter = 0.0;
@@ -123,8 +135,12 @@ int ant_colony(std::vector<Point> points, DT& dt, int L, int Kappa, int max_iter
 
     int method_used = 0;
 
+    double sum = 0.0;
+
     std::vector<Point> steiner_points;
     std::pair<std::vector<Point>, std::vector<Point>> all_points;
+
+    std::vector<double> probabilities;
 
     std::vector<std::pair<size_t, size_t>> edges;
 
@@ -155,6 +171,9 @@ int ant_colony(std::vector<Point> points, DT& dt, int L, int Kappa, int max_iter
             for (int ant = 1; ant < Kappa; ant++) {
                 for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
                     if (obtuse_vertex_index(face) != -1) {
+
+                        probabilities = calculateProbabilities(tau, eta, chi, psi);
+
                         //ylopoihsh improve tringulation
 
                         for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
