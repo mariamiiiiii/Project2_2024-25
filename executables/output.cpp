@@ -53,13 +53,13 @@ void print_rational(const K::FT& coord) {
     std::cout << exact_coord.get_num() << "/" << exact_coord.get_den();
 }
 
-void output(const std::vector<std::pair<size_t, size_t>>& edges, std::vector<Point> steiner_points_given) {
+void output(const std::vector<std::pair<size_t, size_t>>& edges, std::vector<Point> steiner_points_given, const std::string& input_file, const std::string& output_file) {
     // Creation of property tree
     boost::property_tree::ptree pt;
 
     // Read from JSON file
     try {
-        read_json("../input.json", pt);
+        read_json(input_file, pt);
     } catch (const boost::property_tree::json_parser_error &e) {
         std::cerr << "Error reading JSON: " << e.what() << std::endl;
     }
@@ -112,7 +112,7 @@ void output(const std::vector<std::pair<size_t, size_t>>& edges, std::vector<Poi
 
     // Write the output JSON to a file
     try {
-        write_json_no_escaping(output_pt, "../output.json");
+        write_json_no_escaping(output_pt, output_file);
     } catch (const boost::property_tree::json_parser_error &e) {
         std::cerr << "Error writing JSON: " << e.what() << std::endl;
     }

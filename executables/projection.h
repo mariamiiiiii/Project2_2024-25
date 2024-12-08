@@ -4,6 +4,7 @@
 #include <CGAL/convex_hull_2.h>
 #include <vector>
 #include <iostream>
+#include <string>
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
 typedef CGAL::Constrained_Delaunay_triangulation_2<K> DT; 
@@ -11,4 +12,4 @@ typedef DT::Point Point;
 
 Point project_point_onto_line(const Point& P, const Point& A, const Point& B);
 
-int projection(std::vector<Point> points, DT dt);
+int projection(std::vector<Point> points, DT dt, const std::string& input_file, const std::string& output_file);

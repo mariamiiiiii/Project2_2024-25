@@ -4,6 +4,7 @@
 #include <cmath>
 #include "center.h"
 #include "output.h"
+#include <string>
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
 typedef CGAL::Constrained_Delaunay_triangulation_2<K> DT; 
@@ -93,7 +94,7 @@ std::pair<std::vector<Point>, std::vector<Point>> add_steiner_if_obtuse_center(D
     return {steiner_points, points};
 }
 
-int center_steiner_points(std::vector<Point> points, DT dt) {
+int center_steiner_points(std::vector<Point> points, DT dt, const std::string& input_file, const std::string& output_file) {
     std::vector<Point> steiner_points;
     std::pair<std::vector<Point>, std::vector<Point>> all_points;
     bool obtuse_exists = true;
@@ -121,7 +122,7 @@ int center_steiner_points(std::vector<Point> points, DT dt) {
         iterations++;
     }
     edges = print_edges(dt, all_points.first);
-    output(edges, steiner_points);
+    output(edges, steiner_points, input_file, output_file);
     CGAL::draw(dt);
     return 0;
 }

@@ -7,6 +7,7 @@
 #include <cmath> // For angle calculations
 #include "inside_convex_polygon_centroid.h"
 #include "output.h"
+#include <string>
 
 // Define CGAL types
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
@@ -159,7 +160,7 @@ std::pair<std::vector<Point>, std::vector<Point>> add_steiner_in_convex_polygon_
     return {steiner_points, points};
 }
 
-int inside_convex_polygon_centroid_steiner_points(std::vector<Point> points, DT dt) {
+int inside_convex_polygon_centroid_steiner_points(std::vector<Point> points, DT dt, const std::string& input_file, const std::string& output_file) {
     std::vector<Point> steiner_points;
     std::pair<std::vector<Point>, std::vector<Point>> all_points;
     std::vector<std::pair<size_t, size_t>> edges;
@@ -194,7 +195,7 @@ int inside_convex_polygon_centroid_steiner_points(std::vector<Point> points, DT 
 
     edges = print_edges(dt, all_points.first);
 
-    output(edges, steiner_points);
+    output(edges, steiner_points, input_file, output_file);
     CGAL::draw(dt);
 
     return 0;

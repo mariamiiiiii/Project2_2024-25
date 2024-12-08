@@ -118,12 +118,12 @@ int main(int argc, char* argv[]) {
 
     if (method == "local") {
         L = parameters["L"];
-        local_search(points, cdt, L);
+        local_search(points, cdt, L, input_file, output_file);
     } else if (method == "sa") {
         alpha = parameters["alpha"];
         beta = parameters["beta"];
         L = parameters["L"];
-        simulated_annealing(points, cdt, alpha, beta, L);
+        simulated_annealing(points, cdt, alpha, beta, L, input_file, output_file);
         //cout << alpha << " " << beta << " " << L;
         //center_steiner_points(points, cdt);
         cout << alpha << " and " << beta << endl;

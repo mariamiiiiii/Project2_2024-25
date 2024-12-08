@@ -6,6 +6,7 @@
 #include <iostream>
 #include <CGAL/Polygon_2.h>
 #include <CGAL/Polygon_2_algorithms.h>
+#include <string>
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
 typedef CGAL::Constrained_Delaunay_triangulation_2<K> DT; 
@@ -13,4 +14,4 @@ typedef DT::Point Point;
 typedef CGAL::Polygon_2<K> Polygon;
 
 
-int circumcenter_steiner_points(std::vector<Point> points, DT dt);
+int circumcenter_steiner_points(std::vector<Point> points, DT dt, const std::string& input_file, const std::string& output_file);
