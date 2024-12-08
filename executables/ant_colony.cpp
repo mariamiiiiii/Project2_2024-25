@@ -6,10 +6,14 @@
 #include <vector>
 #include <stdexcept>
 #include <iostream>
-#include <random>
 #include <ctime>
-#include <cmath>
+#include <cmath>    // For pow
+#include <random>   // For random number generation
 #include "ant_colony.h"
+#include "projection.h"
+#include "circumcenter.h"
+#include "center.h"
+#include "inside_convex_polygon_centroid.h" 
 #include "utils.h"
 #include "output.h"
 #include <string>
@@ -101,41 +105,81 @@ double calculateDelta(DT& dt, double alpha, double beta, int steiner_points_coun
     return 1.0/(1 + alpha * obtuse_count + beta * steiner_points_count);
 }
 
-double steiner_point_probability(double t, double ) {
-    // Initialize random number generator
-    static std::mt19937 rng(static_cast<unsigned int>(std::time(nullptr)));
-    std::uniform_real_distribution<double> dist(0.0, 1.0); // Uniform distribution [0, 1]
+// Function to calculate probabilities
+std::vector<double> steiner_point_probability(const std::vector<double>& t, const std::vector<double>& h, double x, double y) {
 
-        double probability = std::pow(t, x) * std::pow(h, y);
-        // Generate a random number in [0, 1]
-        double random = dist(rng);
-        // Accept with probability
-        return random < probability;
+    std::vector<double> probabilities(t.size());
 
+    // Compute weighted values for each option
+    double denominator = 0.0;
+    for (size_t i = 0; i < t.size(); ++i) {
+        probabilities[i] = std::pow(t[i], x) * std::pow(h[i], y);
+        denominator += probabilities[i];
+    }
+
+    // Normalize probabilities
+    for (double& prob : probabilities) {
+        prob /= denominator;
+    }
+
+    return probabilities;
 }
 
-std::pair<std::vector<Point>, std::vector<Point>> add_best_steiner(DT& dt, const std::vector<Point>& steiner_points, const std::vector<Point>& points) {
-    // Stub: implement Steiner point optimization
-    return {steiner_points, points};
+// Function to select an option based on probabilities
+int steiner_method(const std::vector<double>& probabilities) {
+    // Compute cumulative probabilities
+    std::vector<double> cumulative(probabilities.size());
+    std::partial_sum(probabilities.begin(), probabilities.end(), cumulative.begin());
+
+    // Generate a random number in the range [0, 1)
+    std::random_device rd;  // Seed generator
+    std::mt19937 gen(rd()); // Random number engine
+    std::uniform_real_distribution<> dis(0.0, 1.0);
+    double random_value = dis(gen);
+
+    // Select the option
+    for (size_t i = 1; i < cumulative.size()+1; ++i) {
+        if (random_value < cumulative[i]) {
+            return i; // Return the selected option index
+        }
+    }
+    // Fallback (should not happen)
+    return -1;
+}
+
+double calculateEnergyAnt(DT& dt, double alpha, double beta, int steiner_points_count) {
+    int obtuse_count = 0;
+    for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
+        int obtuse_vertex = obtuse_vertex_index(face);
+        if (obtuse_vertex != -1) {
+            ++obtuse_count;
+        }
+    }
+
+    if(obtuse_count == 0){
+       return 0.0; 
+    }
+    else {
+        return alpha * obtuse_count + beta * steiner_points_count;
+    }
+    
 }
 
 // Ant colony optimization function
-int ant_colony(std::vector<Point> points, DT& dt, int L, int Kappa, int max_iterations, double alpha, double beta, double lamda, const std::string& input_file, const std::string& output_file ) {
+void ant_colony(std::vector<Point> points, DT& dt, int L, int kappa, double alpha, double beta, double lamda, double xi, double psi, const std::string& input_file, const std::string& output_file ) {
     bool obtuse_exists = true;
     int iterations = 0;
-    double pheromone_projection = 1.0; 
-    double pheromone_circumcenter = 1.0;
-    double pheromone_midpoint = 1.0;
-    double pheromone_adjacent_obtuse_triangles = 1.0;
 
-    double delta_projection = 0.0;
-    double delta_circumcenter = 0.0;
-    double delta_midpoint = 0.0;
-    double delta_adjacent_obtuse_triangles = 0.0;
+    std::vector<double> t, deltaT, h;
+    for (int i = 1; i <= 4; ++i) {
+        t[i] = 1.0;
+        deltaT[i] = 0.0;
+        h[i] = 0.0;
+    }
 
     int method_used = 0;
 
-    double sum = 0.0;
+    double sum = 0.0, previous_energy, new_energy, deltaE;
 
     std::vector<Point> steiner_points;
     std::pair<std::vector<Point>, std::vector<Point>> all_points;
@@ -151,9 +195,9 @@ int ant_colony(std::vector<Point> points, DT& dt, int L, int Kappa, int max_iter
 
     CGAL::draw(dt); // Draw initial triangulation
 
+    previous_energy = calculateEnergyAnt(dt, alpha, beta, steiner_points.size());
     
     while (obtuse_exists && iterations <= max_iterations) {
-        all_points = add_best_steiner(dt, steiner_points, points);
         steiner_points = all_points.first;  // Extract Steiner points
         points = all_points.second;        // Extract updated points
         obtuse_exists = false;
@@ -168,13 +212,50 @@ int ant_colony(std::vector<Point> points, DT& dt, int L, int Kappa, int max_iter
                 }
             }
 
-            for (int ant = 1; ant < Kappa; ant++) {
+            for (int ant = 1; ant < kappa; ant++) {
                 for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
-                    if (obtuse_vertex_index(face) != -1) {
+                    int obtuse_vertex = obtuse_vertex_index(face);
+                    if (obtuse_vertex != -1) {
 
-                        probabilities = calculateProbabilities(tau, eta, chi, psi);
+                        Point p_obtuse = face->vertex(obtuse_vertex)->point();
+                        Point p1 = face->vertex((obtuse_vertex + 1) % 3)->point();
+                        Point p2 = face->vertex((obtuse_vertex + 2) % 3)->point();
 
-                        //ylopoihsh improve tringulation
+                        probabilities = steiner_point_probability(t, h, xi, psi);
+
+                        method_used = steiner_method(probabilities);
+
+                        Point new_point;
+                        switch (method_used) {
+                            case 1:
+                                new_point = project_point_onto_line(p_obtuse, p1, p2);
+                                break;
+                            case 2:
+                                new_point = circumcenter(p_obtuse, p1, p2);
+                                break;
+                            case 3:
+                                new_point = longest_edge_center(p1, p2);
+                                break;
+                            case 4:
+                                auto polygon_points = find_convex_polygon(dt, face);
+                                if (!polygon_points.empty()) {  // Only proceed if convex polygon found
+                                    new_point = compute_centroid(polygon_points);
+                                }
+                                break;
+                        }
+
+                        //Calculate the energy's reduction
+                        new_energy = calculateEnergyAnt(dt, alpha, beta, steiner_points.size());
+                        deltaE = new_energy - previous_energy;
+
+                        if(deltaE < 0) {
+                            //if((random_number <> 3) || (random_number == 3 && is_within_convex_hull(new_point, convex_hull))) {
+                                previous_energy = new_energy;
+                                points.push_back(new_point);
+                                steiner_points.push_back(new_point);
+                                dt.insert(new_point);
+                            //}
+                        }
 
                         for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
                             auto obtuse_vertex = obtuse_vertex_index(face);
@@ -188,36 +269,13 @@ int ant_colony(std::vector<Point> points, DT& dt, int L, int Kappa, int max_iter
                     }
                 }   
             }
-            
-            if(method_used == 1){
-                if(obtuse_count < obtuse_previous_count){
-                    delta_projection = calculateDelta(dt, alpha, beta, steiner_points.size());
-                } else {
-                    delta_projection = 0.0;
-                }
-                pheromone_projection = (1 - lamda) * pheromone_projection + delta_projection;
-            } else if (method_used == 2) {
-                if(obtuse_count < obtuse_previous_count){
-                    delta_circumcenter = calculateDelta(dt, alpha, beta, steiner_points.size());
-                } else {
-                    delta_circumcenter = 0.0;
-                }
-                pheromone_circumcenter = (1 - lamda) * pheromone_circumcenter + delta_circumcenter;
-            } else if (method_used == 3) {
-                if(obtuse_count < obtuse_previous_count){
-                    delta_midpoint = calculateDelta(dt, alpha, beta, steiner_points.size());
-                } else {
-                    delta_midpoint = 0.0;
-                }
-                pheromone_midpoint = (1 - lamda) * pheromone_midpoint + delta_midpoint;
+
+            if(obtuse_count < obtuse_previous_count){
+                deltaT[method_used] = calculateDelta(dt, alpha, beta, steiner_points.size());
             } else {
-                if(obtuse_count < obtuse_previous_count){
-                    delta_adjacent_obtuse_triangles = calculateDelta(dt, alpha, beta, steiner_points.size());
-                } else {
-                    delta_adjacent_obtuse_triangles = 0.0;
-                }
-                pheromone_adjacent_obtuse_triangles = (1 - lamda) * pheromone_adjacent_obtuse_triangles + delta_adjacent_obtuse_triangles;
+                deltaT[method_used] = 0.0;
             }
+            t[method_used] = (1 - lamda) * t[method_used] + deltaT[method_used];
         }
 
         iterations++;

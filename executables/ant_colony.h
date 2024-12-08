@@ -16,7 +16,10 @@ typedef CGAL::Constrained_Delaunay_triangulation_2<K> DT;
 typedef DT::Face_handle FaceHandle;
 typedef DT::Point Point;
 
-int ant_colony(std::vector<Point> points, DT& dt, int L, int Kappa, int max_iterations, const std::string& input_file, const std::string& output_file);
+voiod ant_colony(std::vector<Point> points, DT& dt, int L, int kappa, int max_iterations, const std::string& input_file, const std::string& output_file);
 K::FT height(const Point& P, const Point& A, const Point& B);
 K::FT radius_to_height_ratio(const FaceHandle& face, DT dt);
 double calculateDelta(DT& dt, double alpha, double beta, int steiner_points_count);
+std::vector<double> steiner_point_probability(const std::vector<double>& t, const std::vector<double>& h, double x, double y);
+double calculateEnergyAnt(DT& dt, double alpha, double beta, int steiner_points_count);
+int steiner_method(const std::vector<double>& probabilities);
