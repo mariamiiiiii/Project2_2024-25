@@ -106,30 +106,49 @@ double calculateDelta(DT& dt, double alpha, double beta, int steiner_points_coun
 }
 
 // Function to calculate probabilities
-std::vector<double> steiner_point_probability(const std::vector<double>& t, const std::vector<double>& h, double x, double y) {
+std::vector<double> steiner_point_probability(const std::vector<double>& t, const std::vector<double>& h, double x, double y, std::vector<double> probabilities) {
 
-    std::vector<double> probabilities(t.size());
+    std::vector<double> prob(t.size());
 
     // Compute weighted values for each option
     double denominator = 0.0;
-    for (size_t i = 0; i < t.size(); ++i) {
-        probabilities[i] = std::pow(t[i], x) * std::pow(h[i], y);
+    // std::cout << t.size() << "\n";
+    for (size_t i = 0; i < t.size(); i++) {
+        // probabilities[i] = std::pow(t[i], x) * std::pow(h[i], y);
         denominator += probabilities[i];
+        // std::cout << std::pow(h[i], y) << "\n";
     }
 
     // Normalize probabilities
-    for (double& prob : probabilities) {
-        prob /= denominator;
+    for (size_t i = 0; i < t.size(); i++) {
+        prob[i] = probabilities[i]/denominator;
     }
 
-    return probabilities;
+    // Add a cout to print the prob vector before returning it
+    // std::cout << "Probabilities: ";
+    // for (size_t i = 0; i < prob.size(); i++) {
+    //     std::cout << prob[i] << " ";
+    // }
+    // std::cout << "\n";
+
+    return prob;
 }
+
 
 // Function to select an option based on probabilities
 int steiner_method(const std::vector<double>& probabilities) {
+    // Compute the sum of probabilities
+    double sum = std::accumulate(probabilities.begin(), probabilities.end(), 0.0);
+    
+    // Normalize the probabilities if the sum is not 0
+    std::vector<double> normalized_probabilities(probabilities.size());
+    for (size_t i = 0; i < probabilities.size(); ++i) {
+        normalized_probabilities[i] = probabilities[i] / sum;
+    }
+
     // Compute cumulative probabilities
-    std::vector<double> cumulative(probabilities.size());
-    std::partial_sum(probabilities.begin(), probabilities.end(), cumulative.begin());
+    std::vector<double> cumulative(normalized_probabilities.size());
+    std::partial_sum(normalized_probabilities.begin(), normalized_probabilities.end(), cumulative.begin());
 
     // Generate a random number in the range [0, 1)
     std::random_device rd;  // Seed generator
@@ -137,13 +156,14 @@ int steiner_method(const std::vector<double>& probabilities) {
     std::uniform_real_distribution<> dis(0.0, 1.0);
     double random_value = dis(gen);
 
-    // Select the option
-    for (size_t i = 1; i < cumulative.size()+1; ++i) {
+    // Select the option based on cumulative probabilities
+    for (size_t i = 0; i < cumulative.size(); i++) {
         if (random_value < cumulative[i]) {
             return i; // Return the selected option index
         }
     }
-    // Fallback (should not happen)
+
+    // Fallback (should not happen if probabilities are valid)
     return -1;
 }
 
@@ -166,25 +186,26 @@ double calculateEnergyAnt(DT& dt, double alpha, double beta, int steiner_points_
 }
 
 // Ant colony optimization function
-void ant_colony(std::vector<Point> points, DT& dt, int L, int kappa, double alpha, double beta, double lamda, double xi, double psi, const std::string& input_file, const std::string& output_file ) {
+int ant_colony(std::vector<Point> points, DT& dt, int L, int kappa, double alpha, double beta, double lamda, double xi, double psi, const std::string& input_file, const std::string& output_file ) {
     bool obtuse_exists = true;
     int iterations = 0;
+    int obtuse_count = 0, obtuse_previous_count = 0;
 
-    std::vector<double> t, deltaT, h;
-    for (int i = 1; i <= 4; ++i) {
-        t[i] = 1.0;
-        deltaT[i] = 0.0;
-        h[i] = 0.0;
-    }
+    std::vector<double> t(4, 1.0);      // Initialize with size 4, default value 1.0
+    std::vector<double> deltaT(4, 0.0); // Initialize with size 4, default value 0.0
+    std::vector<double> h(4, 1.0);
+    std::vector<double> probabilities(4, 1.0);
+    std::vector<double> total_probabilities(4, 1.0);
+
+    DT temp_dt;
 
     int method_used = 0;
 
     double sum = 0.0, previous_energy, new_energy, deltaE;
 
     std::vector<Point> steiner_points;
-    std::pair<std::vector<Point>, std::vector<Point>> all_points;
+    // std::pair<std::vector<Point>, std::vector<Point>> all_points;
 
-    std::vector<double> probabilities;
 
     std::vector<std::pair<size_t, size_t>> edges;
 
@@ -195,94 +216,96 @@ void ant_colony(std::vector<Point> points, DT& dt, int L, int kappa, double alph
 
     CGAL::draw(dt); // Draw initial triangulation
 
-    previous_energy = calculateEnergyAnt(dt, alpha, beta, steiner_points.size());
+    previous_energy = 100;
     
-    while (obtuse_exists && iterations <= max_iterations) {
-        steiner_points = all_points.first;  // Extract Steiner points
-        points = all_points.second;        // Extract updated points
-        obtuse_exists = false;
+    // steiner_points = all_points.first;  // Extract Steiner points
+    // points = all_points.second;        // Extract updated points
+    obtuse_exists = false;
 
-        int obtuse_count = 0, obtuse_previous_count = 0;  //possible na xreiazetai ena gia kathe methodo???
-
-        for (int cycle = 1; cycle < L; cycle++) {
-            for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
-                auto obtuse_vertex = obtuse_vertex_index(face);
-                if (obtuse_vertex != -1) {
-                    obtuse_previous_count++;
-                }
+    for (int cycle = 1; cycle < L; cycle++) {
+        obtuse_previous_count = 0;
+        obtuse_count = 0;
+        for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
+            auto obtuse_vertex = obtuse_vertex_index(face);
+            if (obtuse_vertex != -1) {
+                obtuse_previous_count++;
             }
-
-            for (int ant = 1; ant < kappa; ant++) {
-                for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
-                    int obtuse_vertex = obtuse_vertex_index(face);
-                    if (obtuse_vertex != -1) {
-
-                        Point p_obtuse = face->vertex(obtuse_vertex)->point();
-                        Point p1 = face->vertex((obtuse_vertex + 1) % 3)->point();
-                        Point p2 = face->vertex((obtuse_vertex + 2) % 3)->point();
-
-                        probabilities = steiner_point_probability(t, h, xi, psi);
-
-                        method_used = steiner_method(probabilities);
-
-                        Point new_point;
-                        switch (method_used) {
-                            case 1:
-                                new_point = project_point_onto_line(p_obtuse, p1, p2);
-                                break;
-                            case 2:
-                                new_point = circumcenter(p_obtuse, p1, p2);
-                                break;
-                            case 3:
-                                new_point = longest_edge_center(p1, p2);
-                                break;
-                            case 4:
-                                auto polygon_points = find_convex_polygon(dt, face);
-                                if (!polygon_points.empty()) {  // Only proceed if convex polygon found
-                                    new_point = compute_centroid(polygon_points);
-                                }
-                                break;
-                        }
-
-                        //Calculate the energy's reduction
-                        new_energy = calculateEnergyAnt(dt, alpha, beta, steiner_points.size());
-                        deltaE = new_energy - previous_energy;
-
-                        if(deltaE < 0) {
-                            //if((random_number <> 3) || (random_number == 3 && is_within_convex_hull(new_point, convex_hull))) {
-                                previous_energy = new_energy;
-                                points.push_back(new_point);
-                                steiner_points.push_back(new_point);
-                                dt.insert(new_point);
-                            //}
-                        }
-
-                        for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
-                            auto obtuse_vertex = obtuse_vertex_index(face);
-                            if (obtuse_vertex != -1) {
-                                obtuse_count++;
-                            }
-                        }
-                        break;
-
-                        //mexri edo
-                    }
-                }   
-            }
-
-            if(obtuse_count < obtuse_previous_count){
-                deltaT[method_used] = calculateDelta(dt, alpha, beta, steiner_points.size());
-            } else {
-                deltaT[method_used] = 0.0;
-            }
-            t[method_used] = (1 - lamda) * t[method_used] + deltaT[method_used];
         }
 
-        iterations++;
+        for (int ant = 1; ant < kappa; ant++) {
+            for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
+                int obtuse_vertex = obtuse_vertex_index(face);
+                if (obtuse_vertex != -1) {
+                    Point p_obtuse = face->vertex(obtuse_vertex)->point();
+                    Point p1 = face->vertex((obtuse_vertex + 1) % 3)->point();
+                    Point p2 = face->vertex((obtuse_vertex + 2) % 3)->point();
+
+                    total_probabilities = steiner_point_probability(t, h, xi, psi,probabilities);
+
+                    method_used = steiner_method(probabilities);
+
+                    // for (int i =0; i<4; i++){
+                    //     h[i]=radius_to_height_ratio(face, dt, i);
+                    // }   
+                    
+                    // probabilities[i] = std::pow(t[i], x) * std::pow(h[i], y);
+
+                    Point new_point;
+                    switch (method_used) {
+                        case 0:
+                            new_point = project_point_onto_line(p_obtuse, p1, p2);
+                            break;
+                        case 1:
+                            new_point = circumcenter(p_obtuse, p1, p2);
+                            break;
+                        case 2:
+                            new_point = longest_edge_center(p1, p2);
+                            break;
+                        case 3:
+                            auto polygon_points = find_convex_polygon(dt, face);
+                            if (!polygon_points.empty()) {  // Only proceed if convex polygon found
+                                new_point = compute_centroid(polygon_points);
+                            }
+                            break;
+                    }
+
+                    //Calculate the energy's reduction
+                    temp_dt.insert(new_point);
+                    h[method_used] = CGAL::to_double(radius_to_height_ratio(face, dt));
+                    probabilities[method_used] = std::pow(t[method_used], xi) * std::pow(h[method_used], psi);
+                    new_energy = calculateEnergyAnt(temp_dt, alpha, beta, steiner_points.size()+1);
+                    deltaE = new_energy - previous_energy;
+
+                    if(deltaE < 0) {
+                        previous_energy = new_energy;
+                        points.push_back(new_point);
+                        steiner_points.push_back(new_point);
+                        dt.insert(new_point);
+                    }
+
+                    temp_dt = dt;
+                    break;
+                }
+            }   
+        }
+
+        for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
+            auto obtuse_vertex = obtuse_vertex_index(face);
+            if (obtuse_vertex != -1) {
+                obtuse_count++;
+            }
+        }
+
+        if(obtuse_count < obtuse_previous_count){
+            deltaT[method_used] = calculateDelta(dt, alpha, beta, steiner_points.size());
+        } else {
+            deltaT[method_used] = 0.0;
+        }
+        t[method_used] = (1 - lamda) * t[method_used] + deltaT[method_used];
     }
 
-    edges = print_edges(dt, all_points.first);
-    output(edges, steiner_points, input_file, output_file);
+    edges = print_edges(dt, points);
+    output(edges, steiner_points, input_file, output_file, obtuse_previous_count);
     CGAL::draw(dt); // Draw final triangulation
 
     return 0;

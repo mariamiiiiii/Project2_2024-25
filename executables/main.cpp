@@ -15,6 +15,7 @@
 #include "inside_convex_polygon_centroid.h"
 #include "local_search.h"
 #include "simulated_annealing.h"
+#include "ant_colony.h"
 
 // Define CGAL types
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
@@ -170,6 +171,7 @@ int main(int argc, char* argv[]) {
             lambda = parameters["lambda"];
             kappa = parameters["kappa"];
             L = parameters["L"];
+            ant_colony(points, cdt, L, kappa, alpha, beta, lambda, xi, psi, input_file, output_file);
         } else {
             cerr << "Invalid method specified." << endl;
             return 1;
@@ -192,6 +194,7 @@ int main(int argc, char* argv[]) {
             lambda = parameters["lambda"];
             kappa = parameters["kappa"];
             L = parameters["L"];
+            ant_colony(points, cdt, L, kappa, alpha, beta, lambda, xi, psi, input_file, output_file);
         } else {
             cerr << "Invalid method specified." << endl;
             return 1;
