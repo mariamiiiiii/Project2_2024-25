@@ -57,31 +57,6 @@ Point circumcenter(const Point& p1, const Point& p2, const Point& p3) {
     return CGAL::circumcenter(p1, p2, p3);
 }
 
-// Function to print the edges of the triangulation
-template <typename DT>
-std::vector<std::pair<size_t, size_t>> print_edges(const DT& dt, std::vector<Point> points) {
-    std::vector<std::pair<size_t, size_t>> edges; // Corrected the type
-
-    // Create a map from Point to its index in the points vector
-    std::map<typename DT::Point, size_t> point_index_map;
-    for (size_t i = 0; i < points.size(); ++i) {
-        point_index_map[points[i]] = i;
-    }
-
-    // Print edges and their indices
-    for (auto edge = dt.finite_edges_begin(); edge != dt.finite_edges_end(); ++edge) {
-        auto v1 = edge->first->vertex((edge->second + 1) % 3)->point();
-        auto v2 = edge->first->vertex((edge->second + 2) % 3)->point();
-        size_t idx1 = point_index_map[v1];
-        size_t idx2 = point_index_map[v2];
-
-        // Store only indices
-        edges.emplace_back(idx1, idx2);
-    }
-
-    return edges;
-}
-
 template <typename DT>
 std::pair<std::vector<Point>, std::vector<Point>> add_steiner_in_centroid(DT& dt, std::vector<Point> steiner_points, std::vector<Point> points,  const std::vector<Point>& convex_hull) {
     bool added_steiner = false;
@@ -94,7 +69,6 @@ std::pair<std::vector<Point>, std::vector<Point>> add_steiner_in_centroid(DT& dt
             Point p3 = face->vertex(2)->point();
             Point circumcenter_point = circumcenter(p1, p2, p3);
 
-            // Έλεγχος αν το Steiner σημείο βρίσκεται εντός του κυρτού περιβλήματος
             if (is_within_convex_hull(circumcenter_point, convex_hull)) {
                 steiner_points.push_back(circumcenter_point);
                 points.push_back(circumcenter_point);
@@ -111,7 +85,7 @@ std::pair<std::vector<Point>, std::vector<Point>> add_steiner_in_centroid(DT& dt
     return {steiner_points, points};
 }
 
-int circumcenter_steiner_points(std::vector<Point> points, DT dt, const std::string& input_file, const std::string& output_file) {
+DT circumcenter_steiner_points(std::vector<Point> points, DT dt) {
 
     std::vector<Point> convex_hull;
     CGAL::convex_hull_2(points.begin(), points.end(), std::back_inserter(convex_hull));
@@ -119,6 +93,7 @@ int circumcenter_steiner_points(std::vector<Point> points, DT dt, const std::str
 
     bool obtuse_exists = true;
     int iterations = 0;
+    int obtuse_counter=0, previous_obtuse_counter=0, counter=0;
     
     std::vector<Point> steiner_points;
     std::pair<std::vector<Point>, std::vector<Point>> all_points;
@@ -128,9 +103,9 @@ int circumcenter_steiner_points(std::vector<Point> points, DT dt, const std::str
         dt.insert(p);
     }
 
-    CGAL::draw(dt);
+    // CGAL::draw(dt);
 
-    while (obtuse_exists && iterations <= 5) {
+    while (obtuse_exists && iterations <= 5 && counter < 3) {
         all_points = add_steiner_in_centroid(dt, steiner_points, points, convex_hull);
         steiner_points = all_points.first;  // Extract Steiner points
         points = all_points.second;        // Extract updated points
@@ -141,14 +116,15 @@ int circumcenter_steiner_points(std::vector<Point> points, DT dt, const std::str
             int obtuse_vertex = obtuse_vertex_index(face);
             if (obtuse_vertex != -1) {
                 obtuse_exists = true;
-                break;
+                obtuse_counter++;
             }
         }
         iterations++;
+        if(obtuse_counter > previous_obtuse_counter){
+            counter++;
+            previous_obtuse_counter = obtuse_counter;
+        }
     }
-    edges = print_edges(dt, all_points.first);
-    output(edges, steiner_points, input_file, output_file);
-    CGAL::draw(dt);
 
-    return 0;
+    return dt;
 }

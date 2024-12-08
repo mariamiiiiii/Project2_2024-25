@@ -110,7 +110,7 @@ int local_search(std::vector<Point> points, DT dt, int max_iterations, const std
     CGAL::draw(dt);
 
     int counter = 0;
-    while (obtuse_exists && iterations <= max_iterations && counter <= 3) {
+    while (obtuse_exists && iterations <= max_iterations && counter < 3) {
         for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
             auto obtuse_vertex = obtuse_vertex_index(face);
             if (obtuse_vertex != -1) {
@@ -135,7 +135,7 @@ int local_search(std::vector<Point> points, DT dt, int max_iterations, const std
     }
 
     edges = print_edges(dt, all_points.first);
-    output(edges, steiner_points, input_file, output_file);
+    output(edges, steiner_points, input_file, output_file, obtuse_count);
     CGAL::draw(dt);
 
     return 0;

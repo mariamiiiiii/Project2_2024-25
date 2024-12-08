@@ -15,4 +15,4 @@ Point compute_centroid(const std::vector<Point>& points);
 
 std::vector<Point> find_convex_polygon(DT& dt, FaceHandle start_face);
 
-int inside_convex_polygon_centroid_steiner_points(std::vector<Point> points, DT dt, const std::string& input_file, const std::string& output_file);
+DT inside_convex_polygon_centroid_steiner_points(std::vector<Point> points, DT dt);

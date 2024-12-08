@@ -12,4 +12,4 @@ typedef DT::Point Point;
 
 Point project_point_onto_line(const Point& P, const Point& A, const Point& B);
 
-int projection(std::vector<Point> points, DT dt, const std::string& input_file, const std::string& output_file);
+DT projection(std::vector<Point> points, DT dt);
