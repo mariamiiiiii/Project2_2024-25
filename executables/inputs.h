@@ -16,5 +16,4 @@ struct InputData {
     bool delaunay;
 };
 
-
-InputData inputs(); 
+InputData inputs(const std::string& input_file); 
