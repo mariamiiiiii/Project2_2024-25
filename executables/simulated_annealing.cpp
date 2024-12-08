@@ -13,6 +13,7 @@
 #include "centroid.h"
 #include "center.h"
 #include "inside_convex_polygon_centroid.h" 
+#include <string>
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
 typedef CGAL::Constrained_Delaunay_triangulation_2<K> DT;
@@ -56,7 +57,7 @@ bool accept_new_configuration(double deltaE, double T) {
     }
 }
 
-int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double beta, int L) {
+int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double beta, int L, const std::string& input_file, const std::string& output_file) {
     double T = 1.0, previous_energy, new_energy, deltaE;
     int random_number;
 
@@ -125,7 +126,7 @@ int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double b
     }
 
     edges = print_edges(dt, points);
-    output(edges, steiner_points);
+    output(edges, steiner_points, input_file, output_file);
     CGAL::draw(dt);
 
     return 0;

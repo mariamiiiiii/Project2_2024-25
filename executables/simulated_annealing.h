@@ -13,5 +13,5 @@ double calculateEnergy(DT& dt, double alpha, double beta, int steiner_points_cou
 int generate_random_number();
 bool accept_new_configuration(double deltaE, double T);
 // Function to perform Simulated Annealing
-int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double beta, int L);
+int simulated_annealing(std::vector<Point> points, DT dt, double alpha, double beta, int L, const std::string& input_file, const std::string& output_file);
 
