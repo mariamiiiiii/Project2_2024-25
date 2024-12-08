@@ -8,6 +8,7 @@
 #include <CGAL/Polygon_2.h>
 #include <CGAL/Polygon_2_algorithms.h>
 #include "output.h"
+#include <string>
 
 // Define CGAL types
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
@@ -110,7 +111,7 @@ std::pair<std::vector<Point>, std::vector<Point>> add_steiner_in_centroid(DT& dt
     return {steiner_points, points};
 }
 
-int circumcenter_steiner_points(std::vector<Point> points, DT dt) {
+int circumcenter_steiner_points(std::vector<Point> points, DT dt, const std::string& input_file, const std::string& output_file) {
 
     std::vector<Point> convex_hull;
     CGAL::convex_hull_2(points.begin(), points.end(), std::back_inserter(convex_hull));
@@ -146,7 +147,7 @@ int circumcenter_steiner_points(std::vector<Point> points, DT dt) {
         iterations++;
     }
     edges = print_edges(dt, all_points.first);
-    output(edges, steiner_points);
+    output(edges, steiner_points, input_file, output_file);
     CGAL::draw(dt);
 
     return 0;

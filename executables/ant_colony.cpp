@@ -12,6 +12,7 @@
 #include "ant_colony.h"
 #include "utils.h"
 #include "output.h"
+#include <string>
 
 // Define CGAL kernel and types
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
@@ -119,7 +120,7 @@ std::pair<std::vector<Point>, std::vector<Point>> add_best_steiner(DT& dt, const
 }
 
 // Ant colony optimization function
-int ant_colony(std::vector<Point> points, DT& dt, int L, int Kappa, int max_iterations, double alpha, double beta, double lamda ) {
+int ant_colony(std::vector<Point> points, DT& dt, int L, int Kappa, int max_iterations, double alpha, double beta, double lamda, const std::string& input_file, const std::string& output_file ) {
     bool obtuse_exists = true;
     int iterations = 0;
     double pheromone_projection = 1.0; 
@@ -223,7 +224,7 @@ int ant_colony(std::vector<Point> points, DT& dt, int L, int Kappa, int max_iter
     }
 
     edges = print_edges(dt, all_points.first);
-    output(edges, steiner_points);
+    output(edges, steiner_points, input_file, output_file);
     CGAL::draw(dt); // Draw final triangulation
 
     return 0;

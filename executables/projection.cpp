@@ -4,6 +4,7 @@
 #include <cmath> 
 #include "projection.h"
 #include "output.h"
+#include <string>
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
 typedef CGAL::Constrained_Delaunay_triangulation_2<K> DT;
@@ -106,7 +107,7 @@ std::pair<std::vector<Point>, std::vector<Point>> add_steiner_if_obtuse(DT& dt, 
     return {steiner_points, points};
 }
 
-int projection(std::vector<Point> points, DT dt) {
+int projection(std::vector<Point> points, DT dt, const std::string& input_file, const std::string& output_file) {
     bool obtuse_exists = true;
     int iterations = 0;
 
@@ -141,7 +142,7 @@ int projection(std::vector<Point> points, DT dt) {
     }
 
     edges = print_edges(dt, all_points.first);
-    output(edges, steiner_points);
+    output(edges, steiner_points, input_file, output_file);
     CGAL::draw(dt);
 
     return 0;
