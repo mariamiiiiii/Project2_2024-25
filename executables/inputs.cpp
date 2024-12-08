@@ -8,13 +8,13 @@
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
 typedef K::Point_2 Point;
 
-InputData inputs() {
+InputData inputs(const std::string& input_file) {
     // Creation of property tree
     boost::property_tree::ptree pt;
 
     // Read from JSON file
     try {
-        read_json("../input.json", pt);
+        read_json(input_file, pt);
     } catch (const boost::property_tree::json_parser_error &e) {
         std::cerr << "Error reading JSON: " << e.what() << std::endl;
         return {};  // Return empty struct
@@ -38,7 +38,7 @@ InputData inputs() {
     // Create CGAL Point objects from the x and y coordinates
     std::vector<Point> points;
     for (int i = 0; i < num_points; ++i) {
-        points.push_back(Point(points_x[i], points_y[i])); 
+        points.push_back(Point(points_x[i], points_y[i]));
     }
 
     // Retrieve additional constraints
@@ -48,7 +48,7 @@ InputData inputs() {
         for (const auto& value : row.second) {
             row_values.push_back(value.second.get_value<int>());
         }
-        additional_constraints.push_back(row_values); 
+        additional_constraints.push_back(row_values);
     }
 
     // Retrieve region_boundary
@@ -76,7 +76,6 @@ InputData inputs() {
 
     bool delaunay = pt.get<bool>("delaunay");
 
-
     // Create inputData struct and populate it
     InputData input_data;
     input_data.points = points;
@@ -86,5 +85,5 @@ InputData inputs() {
     input_data.parameters = parameters;
     input_data.delaunay = delaunay;
 
-    return input_data; 
+    return input_data;
 }

@@ -4,6 +4,7 @@
 #include <vector>
 #include <utility>
 #include <iostream>
+#include <string>
 #include "inputs.h"
 #include "flipEdges.h"
 #include "output.h"
@@ -24,11 +25,31 @@ typedef CDT::Point Point;
 using namespace std;
 
 int main(int argc, char* argv[]) {
+    std::string input_file;
+    std::string output_file;
+
+    // Parse command-line arguments
+    for (int i = 1; i < argc; ++i) {
+        if (std::string(argv[i]) == "-i" && i + 1 < argc) {
+            input_file = argv[++i];
+        } else if (std::string(argv[i]) == "-o" && i + 1 < argc) {
+            output_file = argv[++i];
+        } else {
+            std::cerr << "Usage: " << argv[0] << " -i /path/to/input.json -o /path/to/output.json" << std::endl;
+            return 1;
+        }
+    }
+
+    if (input_file.empty() || output_file.empty()) {
+        std::cerr << "Input and output file paths must be provided." << std::endl;
+        return 1;
+    }
+
+    // Call the inputs function with the input file path
+    InputData input = inputs(input_file);
+
     // Initialize the Constrained Delaunay Triangulation (CDT)
     CDT cdt;
-
-    // Get data from the executable function
-    InputData input = inputs();
 
     // Get points
     vector<Point> points = input.points;
