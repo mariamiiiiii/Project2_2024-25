@@ -103,7 +103,7 @@ DT circumcenter_steiner_points(std::vector<Point> points, DT dt) {
         dt.insert(p);
     }
 
-    // CGAL::draw(dt);
+    CGAL::draw(dt);
 
     while (obtuse_exists && iterations <= 5 && counter < 3) {
         all_points = add_steiner_in_centroid(dt, steiner_points, points, convex_hull);

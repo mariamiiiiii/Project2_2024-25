@@ -84,6 +84,9 @@ DT centroid_steiner_points(std::vector<Point> points, DT dt) {
     for (const Point& p : points) {
         dt.insert(p);
     }
+
+    CGAL::draw(dt);
+
     while (obtuse_exists && iterations <= 5 && counter < 3) {
         all_points = add_steiner_in_centroid(dt, steiner_points, points);
         steiner_points = all_points.first;  // Extract Steiner points

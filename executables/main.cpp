@@ -117,7 +117,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    if(isDelaunay){
+    if(!isDelaunay){
         // Prompt user to choose the Steiner point insertion method
         cout << "Please choose a method for Steiner points from the following options:\n";
         cout << "1: Center of longest edge\n";

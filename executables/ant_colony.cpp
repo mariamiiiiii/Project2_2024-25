@@ -112,24 +112,15 @@ std::vector<double> steiner_point_probability(const std::vector<double>& t, cons
 
     // Compute weighted values for each option
     double denominator = 0.0;
-    // std::cout << t.size() << "\n";
     for (size_t i = 0; i < t.size(); i++) {
-        // probabilities[i] = std::pow(t[i], x) * std::pow(h[i], y);
+        //probabilities[i] = std::pow(t[i], x) * std::pow(h[i], y);
         denominator += probabilities[i];
-        // std::cout << std::pow(h[i], y) << "\n";
     }
 
     // Normalize probabilities
     for (size_t i = 0; i < t.size(); i++) {
         prob[i] = probabilities[i]/denominator;
     }
-
-    // Add a cout to print the prob vector before returning it
-    // std::cout << "Probabilities: ";
-    // for (size_t i = 0; i < prob.size(); i++) {
-    //     std::cout << prob[i] << " ";
-    // }
-    // std::cout << "\n";
 
     return prob;
 }
@@ -204,8 +195,6 @@ int ant_colony(std::vector<Point> points, DT& dt, int L, int kappa, double alpha
     double sum = 0.0, previous_energy, new_energy, deltaE;
 
     std::vector<Point> steiner_points;
-    // std::pair<std::vector<Point>, std::vector<Point>> all_points;
-
 
     std::vector<std::pair<size_t, size_t>> edges;
 
@@ -218,8 +207,6 @@ int ant_colony(std::vector<Point> points, DT& dt, int L, int kappa, double alpha
 
     previous_energy = 100;
     
-    // steiner_points = all_points.first;  // Extract Steiner points
-    // points = all_points.second;        // Extract updated points
     obtuse_exists = false;
 
     for (int cycle = 1; cycle < L; cycle++) {
@@ -243,12 +230,6 @@ int ant_colony(std::vector<Point> points, DT& dt, int L, int kappa, double alpha
                     total_probabilities = steiner_point_probability(t, h, xi, psi,probabilities);
 
                     method_used = steiner_method(probabilities);
-
-                    // for (int i =0; i<4; i++){
-                    //     h[i]=radius_to_height_ratio(face, dt, i);
-                    // }   
-                    
-                    // probabilities[i] = std::pow(t[i], x) * std::pow(h[i], y);
 
                     Point new_point;
                     switch (method_used) {
