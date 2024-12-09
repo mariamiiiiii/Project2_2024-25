@@ -151,6 +151,8 @@ DT inside_convex_polygon_centroid_steiner_points(std::vector<Point> points, DT d
         dt.insert(p);
     }
 
+    CGAL::draw(dt);
+
     while (obtuse_exists && iterations <= 5 && counter < 3) {
         
         all_points = add_steiner_in_convex_polygon_centroid(dt, steiner_points, points);

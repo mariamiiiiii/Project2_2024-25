@@ -96,6 +96,8 @@ DT projection(std::vector<Point> points, DT dt) {
         dt.insert(p);
     }
 
+    CGAL::draw(dt);
+
     for (auto face = dt.finite_faces_begin(); face != dt.finite_faces_end(); ++face) {
         int obtuse_vertex = obtuse_vertex_index(face);
     }
